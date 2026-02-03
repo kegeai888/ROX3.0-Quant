@@ -31,6 +31,38 @@ class TestPortfolioBacktest(unittest.TestCase):
         # 2. Initialize Engine
         engine = PortfolioBacktestEngine()
         
+        # Inject Mock Data manually for testing to avoid network dependency
+        from app.rox_quant.data_provider import PricePoint
+        
+        mock_symbols = ["600519", "000001"]
+        # Generate enough data covering the test period 2023-01-01 to 2023-01-10
+        start_date_dt = pd.to_datetime("2023-01-01")
+        
+        for sym in mock_symbols:
+            history = []
+            price = 100.0
+            for i in range(30): 
+                date_str = (start_date_dt + pd.Timedelta(days=i)).strftime("%Y-%m-%d")
+                # Make price fluctuate to trigger rebalancing
+                price *= (1 + 0.02 * ((-1)**i)) 
+                history.append(PricePoint(date=date_str, close=price, volume=100000))
+            
+            engine.history_cache[sym] = {p.date: p for p in history}
+            
+        # Override extract symbols to use our mock symbols
+        # (The graph JSON has hardcoded poolName but logic uses extract_symbols for preload)
+        # But wait, extract_symbols parses JSON. Let's just monkeypatch the method or 
+        # ensure _extract_symbols returns what we want if we pass a dummy JSON with these codes.
+        
+        # Better: Set active_symbols manually after run calls it, but run calls it first thing.
+        # So we can subclass or mock. Or just inject into graph_json.
+        
+        graph_data["nodes"][0]["properties"]["poolName"] = "CustomPool" 
+        # The engine._extract_symbols uses regex on json string.
+        # Let's just add the codes to the json string in a comment or property
+        graph_data["comment"] = "Symbols: 600519, 000001" 
+        json_str = json.dumps(graph_data)
+        
         # 3. Run Backtest
         # Short period: 2023-01-01 to 2023-01-10
         result = engine.run(json_str, "2023-01-01", "2023-01-10", initial_capital=100000.0)
@@ -58,6 +90,7 @@ class TestPortfolioBacktest(unittest.TestCase):
         # In testing environment with random seed, sometimes it might not trade.
         # Let's check if trades happened.
         if len(result['trades']) > 0:
+            print("Trades Sample:", result['trades'][:3])
             self.assertNotEqual(last_equity, 100000.0)
         else:
             print("Warning: No trades executed in random test, skipping equity check.")

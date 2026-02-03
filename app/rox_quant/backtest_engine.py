@@ -21,6 +21,8 @@ class BacktestConfig:
     initial_capital: float = 100000.0        # 初始资金（元）
     commission_rate: float = 0.0003          # 手续费率 (0.03%)
     slippage: float = 0.0001                 # 滑点成本 (0.01%)
+    stamp_duty: float = 0.0005               # 印花税 (0.05%, 仅卖出)
+    min_commission: float = 5.0              # 最低佣金 (5元)
     position_size: float = 1.0               # 仓位大小 (0-1 为百分比, >1 为股数)
     min_price: float = 0.01                  # 最小价格精度
 

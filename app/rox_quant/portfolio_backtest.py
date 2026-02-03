@@ -7,23 +7,34 @@ import re
 from app.rox_quant.graph_runner import StrategyGraphRunner
 from app.rox_quant.context import Context
 from app.rox_quant.data_provider import DataProvider
+from app.rox_quant.backtest_engine import BacktestConfig
 
 logger = logging.getLogger(__name__)
 
 class PortfolioBacktestEngine:
-    def __init__(self):
+    def __init__(self, config: BacktestConfig = None):
         self.runner = StrategyGraphRunner()
+        self.config = config or BacktestConfig()
         self.results = {
             "dates": [],
             "equity_curve": [],
             "positions": [], # List of {symbol: weight}
-            "trades": []
+            "trades": [],
+            "daily_returns": []
         }
         self.context = None
         self.price_history = {} # For mock data / last price cache
         self.provider = DataProvider()
         self.active_symbols = []
         self.history_cache = {} # {symbol: {date: PricePoint}}
+        
+    def _format_symbol(self, code: str) -> str:
+        code = str(code).zfill(6)
+        if "." in code: return code
+        if code.startswith("6"): return f"{code}.SH"
+        if code.startswith("0") or code.startswith("3"): return f"{code}.SZ"
+        if code.startswith("4") or code.startswith("8"): return f"{code}.BJ"
+        return code
         
     def run(self, graph_json: str, start_date: str, end_date: str, initial_capital: float = 100000.0) -> Dict:
         """
@@ -171,7 +182,7 @@ class PortfolioBacktestEngine:
         self.results["positions"].append(context.portfolio.positions.copy())
 
     def _rebalance(self, context: Context, target_weights: Dict[str, float]):
-        """执行调仓"""
+        """执行调仓 (考虑交易成本)"""
         if context.data is None or context.data.empty:
             return
 
@@ -181,23 +192,76 @@ class PortfolioBacktestEngine:
         context.portfolio.update(current_prices)
         total_equity = context.portfolio.total_value
         
-        # Calculate new positions
-        new_positions = {}
-        used_cash = 0.0
-        
+        # Calculate Target Shares
+        target_positions = {}
         for symbol, weight in target_weights.items():
             price = current_prices.get(symbol, 0.0)
             if price > 0:
                 target_value = total_equity * weight
-                shares = int(target_value / price)
+                # A股买入通常为100股整数倍
+                # 向下取整到100
+                raw_shares = int(target_value / price)
+                shares = (raw_shares // 100) * 100
                 if shares > 0:
-                    new_positions[symbol] = shares
-                    used_cash += shares * price
+                    target_positions[symbol] = shares
         
-        # Update portfolio state
-        context.portfolio.positions = new_positions
-        context.portfolio.cash = total_equity - used_cash
-        context.portfolio.update(current_prices) # Re-calc to be precise
+        # Calculate Transactions and Cost
+        transaction_cost = 0.0
+        all_symbols = set(context.portfolio.positions.keys()) | set(target_positions.keys())
+        
+        for symbol in all_symbols:
+            current_qty = context.portfolio.positions.get(symbol, 0)
+            target_qty = target_positions.get(symbol, 0)
+            price = current_prices.get(symbol, 0.0)
+            
+            if price <= 0: continue
+            
+            diff_qty = target_qty - current_qty
+            
+            if diff_qty != 0:
+                # 交易额
+                trade_amount = abs(diff_qty) * price
+                
+                # 1. 佣金 (买卖双向, 最低5元)
+                raw_commission = trade_amount * self.config.commission_rate
+                commission = max(raw_commission, self.config.min_commission)
+                
+                # 2. 印花税 (仅卖出)
+                stamp_tax = 0.0
+                if diff_qty < 0: # SELL
+                    stamp_tax = trade_amount * self.config.stamp_duty
+                    
+                # 3. 滑点 (买卖双向)
+                slippage_cost = trade_amount * self.config.slippage
+                
+                total_cost = commission + stamp_tax + slippage_cost
+                transaction_cost += total_cost
+                
+                # 记录交易
+                self.results["trades"].append({
+                    "date": context.now,
+                    "symbol": symbol,
+                    "side": "BUY" if diff_qty > 0 else "SELL",
+                    "qty": abs(diff_qty),
+                    "price": price,
+                    "cost": total_cost,
+                    "commission": commission,
+                    "stamp_tax": stamp_tax,
+                    "slippage": slippage_cost
+                })
+
+        # Update Portfolio
+        # 新现金 = 调仓前总资产 - 交易成本 - 新持仓市值
+        new_positions_value = 0.0
+        for sym, qty in target_positions.items():
+            price = current_prices.get(sym, 0.0)
+            new_positions_value += qty * price
+            
+        context.portfolio.positions = target_positions
+        context.portfolio.cash = total_equity - transaction_cost - new_positions_value
+        
+        # Update again to reflect new state
+        context.portfolio.update(current_prices)
 
     def _generate_trading_dates(self, start_date: str, end_date: str) -> List[datetime]:
         start = datetime.strptime(start_date, "%Y-%m-%d")
@@ -253,18 +317,23 @@ class PortfolioBacktestEngine:
                     
                 pe, pb, cap = 20.0, 2.0, 1000.0
             else:
-                # Fallback to Mock (Random Walk)
-                if not prev_price: prev_price = 100.0
-                change = np.random.normal(0, 0.02)
-                price = prev_price * (1 + change)
-                pe, pb, cap = 20.0, 2.0, 1000.0
+                # Missing Data Handling
+                # Use previous price if available (Forward Fill)
+                if prev_price and prev_price > 0:
+                    price = prev_price
+                    change = 0.0 # No change
+                    pe, pb, cap = 20.0, 2.0, 1000.0
+                else:
+                    # No data and no history (e.g. before IPO or data missing)
+                    # Skip this symbol for today
+                    continue
             
-            if price <= 0: price = 10.0 # Safety
+            if price <= 0: continue # Invalid price
             
             self.price_history[sym] = price
             
             data.append({
-                "symbol": sym,
+                "symbol": self._format_symbol(sym),
                 "name": sym,
                 "price": round(price, 2),
                 "pe_ratio": pe,

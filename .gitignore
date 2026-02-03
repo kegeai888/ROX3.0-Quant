@@ -60,4 +60,3 @@ data/
 .pytest_cache/
 
 # Large files (>100MB)
-app/rox_quant/assets/embedded_kb.json

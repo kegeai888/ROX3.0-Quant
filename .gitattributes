@@ -1,1 +1,2 @@
 app/rox_quant/assets/embedded_kb.json filter=lfs diff=lfs merge=lfs -text
+data/docs.db filter=lfs diff=lfs merge=lfs -text

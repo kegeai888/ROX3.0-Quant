@@ -30,9 +30,9 @@ env/
 
 # Environment Variables
 .env
-.env.example
 .env.local
 .env.*
+!.env.example
 
 # IDE
 .vscode/

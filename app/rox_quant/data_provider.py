@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import List, Optional
 import random
@@ -30,11 +31,14 @@ class DataProvider:
         # Initialize AllTick Client
         self.alltick = None
         try:
-            # Token provided by user
-            token = "085d4dda8f5195556c0dc5c9ebc7d6ac-c-app"
-            self.alltick = AllTickClient(token)
-            # Start connection automatically
-            self.alltick.connect()
+            # Token from environment variable
+            token = os.getenv("ALLTICK_TOKEN")
+            if token:
+                self.alltick = AllTickClient(token)
+                # Start connection automatically
+                self.alltick.connect()
+            else:
+                print("Warning: ALLTICK_TOKEN not found in environment variables. Real-time tick data will be disabled.")
         except Exception as e:
             print(f"Failed to init AllTick: {e}")
 

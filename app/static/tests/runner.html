@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Unit Tests</title>
+  <link rel="stylesheet" href="https://unpkg.com/mocha/mocha.css">
+</head>
+<body>
+  <div id="mocha"></div>
+  <script src="https://unpkg.com/mocha/mocha.js"></script>
+  <script src="https://unpkg.com/chai/chai.js"></script>
+  <script>mocha.setup('bdd'); const { expect } = chai;</script>
+  <script src="/static/js/sim_broker.js"></script>
+  <script src="/static/js/ashare_market.js"></script>
+  <script src="./sim_broker.spec.js"></script>
+  <script src="./ashare_market.spec.js"></script>
+  <script>
+    mocha.run();
+  </script>
+</body>
+</html>

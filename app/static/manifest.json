@@ -1,0 +1,29 @@
+{
+  "name": "ROX Quant 量化交易平台",
+  "short_name": "ROX Quant",
+  "description": "专业量化交易与AI投研平台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#38bdf8",
+  "orientation": "landscape",
+  "icons": [],
+  "categories": ["finance", "business"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "AI 投研",
+      "short_name": "AI投研",
+      "description": "打开AI投研面板",
+      "url": "/?action=ai-research",
+      "icons": []
+    },
+    {
+      "name": "策略回测",
+      "short_name": "回测",
+      "description": "打开策略回测",
+      "url": "/?action=backtest",
+      "icons": []
+    }
+  ]
+}

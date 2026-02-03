@@ -1,0 +1,104 @@
+from datetime import datetime, timedelta
+from typing import Optional
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+import bcrypt
+from pydantic import BaseModel, validator
+import sqlite3
+from app.db import get_db, get_user_by_username, create_user
+from app.core.config import settings
+
+# Configuration
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
+# OAuth2 scheme
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Pydantic Models
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+class User(BaseModel):
+    id: int
+    username: str
+    role: str = "user"
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+    @validator('username')
+    def validate_username(cls, v):
+        if len(v) < 3:
+            raise ValueError('用户名至少需要3个字符')
+        return v
+
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('密码至少需要6个字符')
+        return v
+
+class UserInDB(User):
+    password_hash: str
+
+# Helper Functions
+def verify_password(plain_password, hashed_password):
+    if isinstance(plain_password, str):
+        plain_password = plain_password.encode('utf-8')
+    if isinstance(hashed_password, str):
+        hashed_password = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(plain_password, hashed_password)
+
+def get_password_hash(password):
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password, salt)
+    return hashed.decode('utf-8')
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme), conn: sqlite3.Connection = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    
+    user_dict = get_user_by_username(conn, token_data.username)
+    if user_dict is None:
+        raise credentials_exception
+    return User(**user_dict)
+
+def authenticate_user(conn, username, password):
+    user_dict = get_user_by_username(conn, username)
+    if not user_dict:
+        return False
+    if not verify_password(password, user_dict['password_hash']):
+        return False
+    return UserInDB(**user_dict)

@@ -1,0 +1,155 @@
+<!-- AI Agent Analysis Card (Go-Stock Style) -->
+<div id="ai-agent-card" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
+    <div class="bg-[#121212] border border-[#333] w-[90%] h-[90%] max-w-6xl rounded-lg shadow-2xl flex flex-col overflow-hidden">
+        
+        <!-- Header -->
+        <div class="h-12 bg-[#1a1a1a] border-b border-[#333] flex items-center justify-between px-4 select-none">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-sm">ROX AI 智能投研顾问</h2>
+                    <p class="text-xs text-gray-500">基于 DeepSeek-V3 深度思考模型</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleAIAgent()" class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white rounded hover:bg-[#333] transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex overflow-hidden">
+            
+            <!-- Left: Chat & Analysis Stream -->
+            <div class="flex-1 flex flex-col border-r border-[#333]">
+                <!-- Chat History -->
+                <div id="ai-chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+                    <!-- Welcome Message -->
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-500 flex-shrink-0 flex items-center justify-center mt-1">
+                            <i class="fas fa-robot text-white text-xs"></i>
+                        </div>
+                        <div class="flex-1">
+                            <div class="bg-[#1e1e1e] p-3 rounded-lg rounded-tl-none border border-[#333] text-gray-300 text-sm leading-relaxed shadow-sm">
+                                <p>您好！我是您的智能投研顾问。我可以为您进行：</p>
+                                <ul class="list-disc list-inside mt-2 space-y-1 text-gray-400">
+                                    <li>个股深度诊断与评级</li>
+                                    <li>市场情绪与资金流向分析</li>
+                                    <li>研报核心观点提炼</li>
+                                    <li>技术面与基本面综合扫描</li>
+                                </ul>
+                                <p class="mt-2">请告诉我您感兴趣的股票代码（如 600519）或直接提问。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-4 bg-[#1a1a1a] border-t border-[#333]">
+                    <div class="relative">
+                        <textarea id="ai-input" rows="3" class="w-full bg-[#111] border border-[#333] rounded-lg p-3 text-sm text-white focus:outline-none focus:border-purple-500 resize-none pr-12 placeholder-gray-600 transition-colors" placeholder="输入股票代码或问题，例如：分析贵州茅台现在的买点..."></textarea>
+                        <button onclick="sendAIMessage()" class="absolute bottom-2 right-2 w-8 h-8 bg-purple-600 hover:bg-purple-500 text-white rounded flex items-center justify-center transition-colors shadow-lg">
+                            <i class="fas fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button class="text-xs px-2 py-1 bg-[#222] hover:bg-[#333] text-gray-400 rounded border border-[#333] transition-colors" onclick="setInput('分析 600519 贵州茅台')">贵州茅台</button>
+                        <button class="text-xs px-2 py-1 bg-[#222] hover:bg-[#333] text-gray-400 rounded border border-[#333] transition-colors" onclick="setInput('当前市场情绪如何？')">市场情绪</button>
+                        <button class="text-xs px-2 py-1 bg-[#222] hover:bg-[#333] text-gray-400 rounded border border-[#333] transition-colors" onclick="setInput('帮我挖掘半导体板块机会')">半导体机会</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Real-time Dashboard (Go-Stock Style) -->
+            <div class="w-[380px] bg-[#151515] flex flex-col overflow-y-auto scrollbar-thin">
+                
+                <!-- Stock Info Card -->
+                <div class="p-4 border-b border-[#333]">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 id="ai-stock-name" class="text-lg font-bold text-white">---</h3>
+                            <span id="ai-stock-code" class="text-xs font-mono text-gray-500">---</span>
+                        </div>
+                        <div class="text-right">
+                            <div id="ai-stock-price" class="text-xl font-mono font-bold text-gray-400">---</div>
+                            <div id="ai-stock-change" class="text-xs font-mono text-gray-500">---</div>
+                        </div>
+                    </div>
+                    <!-- Mini Chart Placeholder -->
+                    <div id="ai-mini-chart" class="h-16 bg-[#111] rounded border border-[#222] relative overflow-hidden">
+                        <!-- Canvas or SVG injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Analysis Modules -->
+                <div class="p-4 space-y-4">
+                    
+                    <!-- 1. Sentiment Score -->
+                    <div class="bg-[#1e1e1e] p-3 rounded border border-[#333]">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-400 font-bold"><i class="fas fa-thermometer-half mr-1"></i>市场情绪</span>
+                            <span id="ai-sentiment-score" class="text-xs font-bold text-yellow-500">---</span>
+                        </div>
+                        <div class="w-full bg-[#333] h-1.5 rounded-full overflow-hidden">
+                            <div id="ai-sentiment-bar" class="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 w-0 transition-all duration-1000"></div>
+                        </div>
+                        <p id="ai-sentiment-text" class="text-xs text-gray-500 mt-2 leading-tight">等待分析...</p>
+                    </div>
+
+                    <!-- 2. Fund Flow (Main Force) -->
+                    <div class="bg-[#1e1e1e] p-3 rounded border border-[#333]">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-gray-400 font-bold"><i class="fas fa-hand-holding-usd mr-1"></i>主力资金</span>
+                            <span id="ai-fund-val" class="text-xs font-mono text-gray-400">---</span>
+                        </div>
+                        <div class="flex gap-1 h-12 items-end justify-between px-2">
+                            <!-- Bars injected via JS -->
+                            <div class="w-2 bg-red-900 h-[40%] rounded-t-sm"></div>
+                            <div class="w-2 bg-red-700 h-[60%] rounded-t-sm"></div>
+                            <div class="w-2 bg-green-800 h-[30%] rounded-t-sm"></div>
+                            <div class="w-2 bg-red-600 h-[80%] rounded-t-sm"></div>
+                            <div class="w-2 bg-red-500 h-[100%] rounded-t-sm animate-pulse"></div>
+                        </div>
+                        <p id="ai-fund-text" class="text-xs text-gray-500 mt-2 leading-tight">等待分析...</p>
+                    </div>
+
+                    <!-- 3. Key Indicators -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-[#1e1e1e] p-2 rounded border border-[#333] text-center">
+                            <div class="text-[10px] text-gray-500">RSI (14)</div>
+                            <div id="ai-ind-rsi" class="text-sm font-mono text-gray-300">--</div>
+                        </div>
+                        <div class="bg-[#1e1e1e] p-2 rounded border border-[#333] text-center">
+                            <div class="text-[10px] text-gray-500">KDJ (J)</div>
+                            <div id="ai-ind-kdj" class="text-sm font-mono text-gray-300">--</div>
+                        </div>
+                        <div class="bg-[#1e1e1e] p-2 rounded border border-[#333] text-center">
+                            <div class="text-[10px] text-gray-500">MACD</div>
+                            <div id="ai-ind-macd" class="text-sm font-mono text-gray-300">--</div>
+                        </div>
+                        <div class="bg-[#1e1e1e] p-2 rounded border border-[#333] text-center">
+                            <div class="text-[10px] text-gray-500">MA20偏离</div>
+                            <div id="ai-ind-ma" class="text-sm font-mono text-gray-300">--</div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Smart Diagnosis -->
+                    <div class="bg-gradient-to-br from-[#1e1e1e] to-[#252525] p-3 rounded border border-[#333] relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-1 opacity-10">
+                            <i class="fas fa-brain text-4xl text-white"></i>
+                        </div>
+                        <h4 class="text-xs text-purple-400 font-bold mb-2">ROX 智能诊断</h4>
+                        <ul id="ai-diagnosis-list" class="space-y-1 text-xs text-gray-300 list-disc list-inside">
+                            <li>暂无数据</li>
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

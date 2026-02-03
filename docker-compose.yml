@@ -1,0 +1,66 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - DATABASE_URL=postgresql://rox_quant:password@postgres:5432/rox_quant
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=production
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - rox_quant_network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=rox_quant
+      - POSTGRES_USER=rox_quant
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - rox_quant_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - rox_quant_network
+    command: redis-server --appendonly yes
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - rox_quant_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  rox_quant_network:
+    driver: bridge

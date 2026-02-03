@@ -1,0 +1,52 @@
+{
+  "Public": {
+    "UserPath": "user",
+    "PublicPath": "",
+    "Cache": "tmp",
+    "SystemFilePath": "syscfg",
+    "AppTitle": "Mac炒股",
+    "AppName": "Mac炒股",
+    "DeviceName": "iMac_Standard",
+    "DeviceName_IMAC":"iMac_Standard",
+    "DeviceName_IOS":"iPhone_Standard",
+    "DeviceName_Android": "GPhone_Standard",
+    "IfSyncPri":1,
+    "MachInfo":3,
+    "SetHostFailStopBalance":1,
+    "UseHQDataMaintain":0,
+    "QSID": 999,
+    "TestKey": {
+      "Version": "1234"
+    },
+    "ArrayKey": [
+      [
+        "Array"
+      ],
+      [
+        "Array2"
+      ],
+      [
+        "Array2"
+      ],
+      [
+        "Array"
+      ],
+      [
+        "null",
+        "Array1"
+      ]
+    ]
+  },
+  "GphoneCfg":{
+    "UseFt":0,
+    "UseZLDH":0,
+    "UseDomainCol2":0
+  },
+  "Upgrade":{
+    "MMName1":{"CurMD5": "32560465D0E26D23A6E1B5200C83948E"},
+    "MMName": {"CurMD5": "32560465D0E26D23A6E1B5200C83948E"}
+  },
+  "HQ":{
+      "HQMaintainMode":0
+   }
+}

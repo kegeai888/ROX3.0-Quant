@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rox Quant | 罗克思量化助教</title>
+    <script type="module" src="/static/js/libs/tailwindcss.js"></script>
+    <script type="module" src="/static/js/libs/echarts.min.js"></script>
+    <script type="module" src="/static/js/libs/html2canvas.min.js"></script>
+    <script type="module" src="/static/js/libs/jspdf.umd.min.js"></script>
+    <script type="module" src="/static/js/lightweight-charts.standalone.production.js"></script>
+    <link href="/static/css/all.min.css" rel="stylesheet">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'JetBrains+Mono', monospace; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .neon-text { text-shadow: 0 0 10px #38bdf8; }
+        .neon-border { box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); border: 1px solid #38bdf8; }
+        input, select { background: #1e293b; border: 1px solid #334155; color: #f1f5f9; }
+        input:focus { border-color: #38bdf8; outline: none; }
+        /* Mobile Scrollbar optimization */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 h-screen flex flex-col overflow-hidden">
+    <div id="scroll-progress" class="fixed top-0 left-0 h-1 bg-sky-500 z-50 w-0"></div>
+    <!-- Navbar -->
+    <nav class="h-14 border-b border-slate-700 bg-slate-900/80 backdrop-blur flex items-center px-4 justify-between shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-chart-network text-sky-500 text-xl"></i>
+            <h1 class="font-bold text-lg bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">ROX QUANT</h1>
+        </div>
+        
+        <!-- Mode Switcher (Desktop) -->
+        <div class="hidden md:flex bg-slate-800/50 p-1 rounded-lg">
+            <button onclick="switchMode('market')" class="px-4 py-1.5 rounded-md text-sm transition-all font-medium" id="nav-market">
+                <i class="fas fa-globe mr-1"></i> 市场看板
+            </button>
+            <button onclick="switchMode('macro')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-macro">
+                <i class="fas fa-landmark mr-1"></i> 宏观仪表盘
+            </button>
+            <button onclick="switchMode('strategy')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-strategy">
+                <i class="fas fa-chess-board mr-1"></i> 策略回测
+            </button>
+            <button onclick="switchMode('community')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-community">
+                <i class="fas fa-users mr-1"></i> 社区跟单
+            </button>
+            <button onclick="switchMode('diagnosis')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-diagnosis">
+                <i class="fas fa-microscope mr-1"></i> 个股诊断
+            </button>
+            <button onclick="switchMode('weekly')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-weekly">
+                <i class="fas fa-star mr-1"></i> 每周推荐
+            </button>
+            <button onclick="switchMode('kb')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-kb">
+                <i class="fas fa-book mr-1"></i> 知识库
+            </button>
+            <button onclick="switchMode('trading')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-trading">
+                <i class="fas fa-wallet mr-1"></i> 交易系统
+            </button>
+            <button onclick="switchMode('system')" class="px-4 py-1.5 rounded-md text-sm transition-all text-slate-400 hover:text-slate-200" id="nav-system">
+                <i class="fas fa-server mr-1"></i> 系统状态
+            </button>
+        </div>
+
+        <!-- Mobile Menu Button (Navigation) -->
+        <div class="flex items-center gap-2 md:hidden">
+            <button onclick="toggleSidebar()" class="text-slate-300 hover:text-white p-2 rounded hover:bg-slate-800">
+                <i class="fas fa-sliders-h text-lg"></i>
+            </button>
+            <button onclick="toggleMobileMenu()" class="text-slate-300 hover:text-white p-2 rounded hover:bg-slate-800">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+        </div>
+
+        <div class="flex items-center gap-4 hidden md:flex">
+            <div class="text-xs text-slate-500">
+                <span class="mr-3"><i class="fas fa-wifi text-emerald-500 mr-1"></i><span id="ws-status-text">在线</span></span>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-xs font-bold ring-2 ring-slate-800 cursor-pointer hover:scale-105 transition-transform" onclick="toggleUserPanel()">
+                R
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="fixed inset-0 bg-slate-900/95 z-40 hidden flex flex-col items-center justify-center gap-8 md:hidden transition-opacity backdrop-blur-sm">
+        <button onclick="switchMode('market'); toggleMobileMenu()" class="text-xl font-bold text-slate-300 hover:text-sky-400 flex items-center gap-3">
+            <i class="fas fa-globe"></i> 市场看板
+        </button>
+        <button onclick="switchMode('diagnosis'); toggleMobileMenu()" class="text-xl font-bold text-slate-300 hover:text-sky-400 flex items-center gap-3">
+            <i class="fas fa-microscope"></i> 个股诊断
+        </button>
+        <button onclick="switchMode('weekly'); toggleMobileMenu()" class="text-xl font-bold text-slate-300 hover:text-sky-400 flex items-center gap-3">
+            <i class="fas fa-star text-yellow-500"></i> 每周推荐
+        </button>
+        <button onclick="switchMode('kb'); toggleMobileMenu()" class="text-xl font-bold text-slate-300 hover:text-sky-400 flex items-center gap-3">
+            <i class="fas fa-book"></i> 知识库
+        </button>
+        <button onclick="switchMode('trading'); toggleMobileMenu()" class="text-xl font-bold text-slate-300 hover:text-sky-400 flex items-center gap-3">
+            <i class="fas fa-wallet"></i> 交易系统
+        </button>
+        <button onclick="toggleMobileMenu()" class="absolute top-4 right-4 text-slate-400 p-2 w-10 h-10 flex items-center justify-center border border-slate-700 rounded-full">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+    </div>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity" onclick="toggleSidebar()"></div>
+
+    <!-- Main Layout -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- SIDEBAR (Control Panel) -->
+        <div id="sidebar-panel" class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 border-r border-slate-700 transform -translate-x-full transition-transform duration-300 lg:relative lg:translate-x-0 lg:w-96 lg:inset-auto lg:bg-slate-900/50 flex flex-col h-full shadow-2xl lg:shadow-none hidden" data-market-hidden="true">
+            
+            <!-- Sidebar Header / Tabs (Internal) -->
+            <div class="flex border-b border-slate-700/50 text-xs font-bold text-slate-400 shrink-0">
+                <!-- Dynamic Title based on Mode -->
+                <div id="sidebar-title" class="px-4 py-3 flex-1 flex items-center gap-2 text-sky-400 bg-slate-800/30">
+                    <!-- Content injected by JS -->
+                </div>
+            </div>
+
+            <!-- SIDEBAR CONTENT: WATCHLIST (For Market Mode) -->
+            <div id="sidebar-market" class="flex-1 flex flex-col overflow-hidden">
+                <div class="p-3 border-b border-slate-700/50 flex gap-2">
+                    <input id="wl_stock_name" type="text" class="flex-1 p-2 rounded text-xs box-border bg-slate-800 border-slate-700" placeholder="股票名称">
+                    <input id="wl_stock_code" type="text" class="w-20 p-2 rounded text-xs box-border bg-slate-800 border-slate-700" placeholder="代码">
+                    <button onclick="manualAddToWatchlist()" class="bg-slate-700 hover:bg-sky-600 text-white px-3 rounded text-xs"><i class="fas fa-plus"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar" id="watchlist-container">
+                    <!-- Watchlist Items -->
+                </div>
+
+                <!-- K-Line Loader -->
+                <div class="p-3 border-t border-slate-700/50">
+                    <h4 class="text-xs font-bold text-slate-400 mb-2">查询 K 线</h4>
+                    <div class="flex gap-2">
+                        <input id="kline-stock-code" type="text" class="flex-1 p-2 rounded text-xs box-border bg-slate-800 border-slate-700" placeholder="输入股票代码" value="sh600519">
+                        <button onclick="loadKlineChartFromInput()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 rounded text-xs">查询</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIDEBAR CONTENT: INPUTS (For Diagnosis Mode) -->
+            <div id="sidebar-diagnosis" class="hidden flex-1 flex flex-col overflow-y-auto p-4 custom-scrollbar space-y-4">
+                <div class="flex gap-1 relative">
+                    <div class="flex-1 flex gap-1 min-w-0">
+                        <div class="relative flex-1">
+                            <input id="stock_name" type="text" class="w-full h-9 px-2 rounded box-border text-sm bg-[#1e293b] border border-slate-600 focus:border-sky-500" placeholder="输入代码/名称" autocomplete="off">
+                            <div id="stock-suggestions" class="absolute left-0 top-full mt-1 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-40 hidden max-h-60 overflow-y-auto"></div>
+                        </div>
+                        <input id="stock_code" type="text" class="w-20 h-9 px-1 rounded bg-slate-800 text-slate-400 text-center text-xs box-border border border-slate-700" placeholder="代码" readonly>
+                    </div>
+                    <button onclick="addToWatchlist()" class="bg-slate-800 w-9 h-9 rounded text-yellow-500 shrink-0 flex items-center justify-center border border-slate-700"><i class="fas fa-star"></i></button>
+                    <button onclick="fetchRealtime()" class="bg-sky-600 text-white px-3 h-9 rounded text-xs font-bold shrink-0 shadow-lg shadow-sky-900/50">获取</button>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">细分赛道</label>
+                        <input id="sector" type="text" class="w-full p-2 rounded box-border text-sm" placeholder="如：白酒/消费">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">现价 (P_now)</label>
+                            <input id="p_now" type="number" step="0.01" class="w-full p-2 rounded box-border text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">止损 (P_stop)</label>
+                            <input id="p_stop" type="number" step="0.01" class="w-full p-2 rounded box-border text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">目标 (P_target)</label>
+                        <input id="p_target" type="number" step="0.01" class="w-full p-2 rounded box-border text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1 flex justify-between">获利盘比例 <span class="text-slate-500 text-[10px]">(0-1.0)</span></label>
+                        <input id="chips_ratio" type="number" step="0.01" class="w-full p-2 rounded box-border text-sm" value="0.85">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1 flex justify-between">量能增幅 <span class="text-slate-500 text-[10px]">(0-1.0)</span></label>
+                        <input id="volume_increase" type="number" step="0.01" class="w-full p-2 rounded box-border text-sm" value="0.40">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">共振等级</label>
+                        <select id="resonance_level" class="w-full p-2 rounded box-border text-sm bg-slate-800">
+                            <option value="S">S级 (强共振)</option>
+                            <option value="A">A级 (较强)</option>
+                            <option value="B" selected>B级 (中性)</option>
+                            <option value="C">C级 (弱共振)</option>
+                        </select>
+                    </div>
+
+                    <!-- Simulation Params (Restored) -->
+                    <div class="bg-slate-800/30 p-3 rounded border border-slate-700/50 mt-2">
+                        <h4 class="text-[10px] font-bold text-slate-500 mb-2 uppercase">模拟建仓参数</h4>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-1">止损比例 (%)</label>
+                                <input type="number" id="sim_sl" value="8" step="0.5" class="w-full p-1.5 rounded box-border text-xs bg-slate-900 border border-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-1">目标收益 (%)</label>
+                                <input type="number" id="sim_tp" value="15" step="1" class="w-full p-1.5 rounded box-border text-xs bg-slate-900 border border-slate-700">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">初始本金</label>
+                            <input type="number" id="sim_capital" value="100000" class="w-full p-1.5 rounded box-border text-xs bg-slate-900 border border-slate-700">
+                        </div>
+                    </div>
+                    
+                    <button onclick="analyze()" class="w-full bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-sky-900/20 mt-2">
+                        <i class="fas fa-play mr-2"></i> 开始沙盘推演
+                    </button>
+                    
+                    <div class="pt-4 border-t border-slate-700/50">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xs font-bold text-slate-500">历史记录</h4>
+                            <div class="flex gap-2">
+                                <button onclick="resetAnalysis()" class="text-[10px] text-slate-400 hover:text-white" title="重置/新建分析">
+                                    <i class="fas fa-redo"></i> 重置
+                                </button>
+                                <button onclick="clearHistory()" class="text-[10px] text-slate-400 hover:text-red-400" title="清空历史">
+                                    <i class="fas fa-trash-alt"></i> 清空
+                                </button>
+                            </div>
+                        </div>
+                        <div id="history-list" class="space-y-2 max-h-40 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIDEBAR CONTENT: KB (For KB Mode) -->
+            <div id="sidebar-kb" class="hidden flex-1 flex flex-col p-4">
+                <div class="flex gap-2 mb-4">
+                    <input id="kb-q" type="text" class="flex-1 p-2 rounded text-sm bg-slate-800 border-slate-700" placeholder="搜索知识库..." onkeydown="if(event.key==='Enter') searchKB()">
+                    <button onclick="searchKB()" class="bg-slate-700 px-3 rounded hover:bg-sky-600"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="flex gap-2 text-[10px] mb-4 text-slate-400">
+                     <label><input type="radio" name="search_mode" value="local" checked> 本地</label>
+                     <label><input type="radio" name="search_mode" value="web"> 联网</label>
+                     <label><input type="radio" name="search_mode" value="mixed"> 混合</label>
+                </div>
+                <div id="kb-results" class="flex-1 overflow-y-auto space-y-2 custom-scrollbar text-xs"></div>
+            </div>
+
+            <!-- SIDEBAR CONTENT: TRADING (For Trading Mode) -->
+            <div id="sidebar-trading" class="hidden flex-1 flex flex-col p-4 overflow-y-auto custom-scrollbar space-y-4">
+                <div class="flex items-center justify-between mb-2">
+                    <button onclick="syncRealAccount()" class="text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded">
+                        <i class="fas fa-sync-alt mr-1"></i> 同步实盘（只读）
+                    </button>
+                    <div class="flex items-center gap-3">
+                        <span id="sync-last" class="text-[10px] text-slate-500">上次成功：--</span>
+                        <label class="flex items-center gap-2 text-[10px] text-slate-400">
+                            <input type="checkbox" id="auto-sync"> 自动同步
+                        </label>
+                        <select id="sync-interval" class="text-[10px] bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-300">
+                            <option value="0">手动</option>
+                            <option value="120" selected>每2分钟</option>
+                            <option value="300">每5分钟</option>
+                            <option value="900">每15分钟</option>
+                        </select>
+                        <label class="flex items-center gap-2 text-[10px] text-slate-400">
+                            <input type="checkbox" id="slow-sync"> 慢速刷新
+                        </label>
+                    </div>
+                </div>
+                <div class="flex gap-2 bg-slate-800 p-1 rounded-lg text-xs mb-2">
+                    <button onclick="switchTradingTab('sim')" id="tab-trade-sim" class="flex-1 py-1.5 rounded bg-sky-600 text-white transition-all">模拟盘</button>
+                    <button onclick="switchTradingTab('real')" id="tab-trade-real" class="flex-1 py-1.5 rounded text-slate-400 hover:text-white transition-all">实盘</button>
+                </div>
+                
+                <div class="bg-slate-800/50 p-3 rounded border border-slate-700">
+                    <h4 class="text-[10px] font-bold text-slate-500 mb-2 uppercase" id="trade-account-title">SIM ACCOUNT</h4>
+                    <div class="text-2xl font-bold text-white mb-1" id="trade-balance">--</div>
+                    <div class="text-xs text-emerald-400" id="trade-pnl">--</div>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 border-b border-slate-700 pb-1">新建交易</h4>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">代码/名称</label>
+                        <div class="relative">
+                            <input id="trade-symbol" type="text" class="w-full p-2 rounded text-xs bg-slate-800 border-slate-700 focus:border-sky-500" placeholder="搜索股票..." autocomplete="off">
+                            <div id="trade-stock-suggestions" class="absolute left-0 top-full mt-1 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 hidden max-h-40 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">方向</label>
+                            <select id="trade-side" class="w-full p-2 rounded text-xs bg-slate-800 border-slate-700">
+                                <option value="LONG">做多</option>
+                                <option value="SHORT">做空</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">数量</label>
+                            <input id="trade-qty" type="number" value="100" class="w-full p-2 rounded text-xs bg-slate-800 border-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">价格</label>
+                            <input id="trade-price" type="number" placeholder="市价" class="w-full p-2 rounded text-xs bg-slate-800 border-slate-700">
+                        </div>
+                    </div>
+                    <button onclick="executeTrade()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded">执行</button>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 border-b border-slate-700 pb-1">当前持仓</h4>
+                    <div id="trade-positions" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="flex-1 flex flex-col p-4 overflow-hidden">
+            <div class="glass rounded-lg p-4 flex-1 flex flex-col">
+                <!-- Market Overview -->
+                <div id="market-overview-container" class="mb-4"></div>
+
+                <!-- K-Line Chart -->
+                <div id="kline-chart-container" class="flex-1 w-full h-full min-h-0"></div>
+            </div>
+        </div>
+    </main>
+    </main>
+
+    <script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

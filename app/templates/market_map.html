@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROX 3.0 - 全市场热力图</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #e2e8f0; }
+        #heatmap-container { width: 100%; height: calc(100vh - 80px); }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 h-16 flex items-center px-6 justify-between shrink-0">
+        <div class="flex items-center gap-4">
+            <a href="/" class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500">
+                ROX Quant <span class="text-xs text-slate-400 font-normal">v3.0</span>
+            </a>
+            <div class="h-6 w-px bg-slate-700 mx-2"></div>
+            <h1 class="text-lg font-medium text-white"><i class="fas fa-th-large mr-2 text-blue-400"></i>全市场热力图 (Sector Map)</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-sm text-slate-400">
+                <span class="w-3 h-3 bg-red-500 rounded-sm"></span> 涨
+                <span class="w-3 h-3 bg-slate-600 rounded-sm"></span> 平
+                <span class="w-3 h-3 bg-green-500 rounded-sm"></span> 跌
+            </div>
+            <button onclick="refreshMap()" class="p-2 hover:bg-slate-700 rounded text-slate-300 transition-colors">
+                <i class="fas fa-sync-alt"></i> 刷新
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-hidden p-4 relative">
+        <div id="loading" class="absolute inset-0 flex items-center justify-center z-10 bg-slate-900/50 backdrop-blur-sm">
+            <div class="text-center">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-4"></i>
+                <p class="text-slate-300">正在加载全市场数据...</p>
+            </div>
+        </div>
+        <div id="heatmap-container" class="rounded-lg border border-slate-700 bg-slate-800/50 shadow-xl"></div>
+    </main>
+
+    <script>
+        let myChart = null;
+
+        async function fetchHeatmapData() {
+            try {
+                const response = await fetch('/api/market/heatmap/data');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Failed to fetch heatmap data:', error);
+                return null;
+            }
+        }
+
+        function renderChart(data) {
+            const dom = document.getElementById('heatmap-container');
+            if (!myChart) {
+                myChart = echarts.init(dom, 'dark');
+                window.addEventListener('resize', () => myChart.resize());
+            }
+
+            // data format: [{name: 'Sector', value: [MarketCap, ChangePct], ...}]
+            // ECharts TreeMap expects value to be single number for area.
+            // We map value[0] (MarketCap) to value for area.
+            // We use visualMap for value[1] (ChangePct) to color.
+
+            const formattedData = data.map(item => ({
+                name: item.name,
+                value: item.value[0], // Area = Market Cap
+                change: item.value[1], // For tooltip and color
+                // itemStyle handled by visualMap or callback
+            }));
+
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    formatter: function (info) {
+                        var value = info.value;
+                        var amount = (value / 100000000).toFixed(2) + '亿';
+                        var change = info.data.change;
+                        var changeStr = (change > 0 ? '+' : '') + change + '%';
+                        return [
+                            '<div class="font-bold text-lg">' + info.name + '</div>',
+                            '总市值: ' + amount,
+                            '涨跌幅: <span class="' + (change > 0 ? 'text-red-400' : (change < 0 ? 'text-green-400' : 'text-slate-400')) + '">' + changeStr + '</span>'
+                        ].join('<br>');
+                    },
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    borderColor: '#334155',
+                    textStyle: { color: '#e2e8f0' }
+                },
+                series: [{
+                    type: 'treemap',
+                    width: '100%',
+                    height: '100%',
+                    roam: false, // Zoom?
+                    nodeClick: false, // 'zoomToNode' or false
+                    breadcrumb: { show: false },
+                    label: {
+                        show: true,
+                        formatter: '{b}\n{c}',
+                        formatter: function(params) {
+                            var change = params.data.change;
+                            var changeStr = (change > 0 ? '+' : '') + change + '%';
+                            return '{name|' + params.name + '}\n{change|' + changeStr + '}';
+                        },
+                        rich: {
+                            name: {
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                color: '#fff',
+                                padding: [0, 0, 4, 0]
+                            },
+                            change: {
+                                fontSize: 12,
+                                color: '#eee'
+                            }
+                        }
+                    },
+                    itemStyle: {
+                        borderColor: '#0f172a',
+                        borderWidth: 1,
+                        gapWidth: 1
+                    },
+                    data: formattedData,
+                    levels: [
+                        {
+                            itemStyle: {
+                                normal: {
+                                    borderColor: '#0f172a',
+                                    borderWidth: 1,
+                                    gapWidth: 1
+                                }
+                            }
+                        }
+                    ]
+                }]
+            };
+
+            // Custom Color Logic based on Change%
+            // ECharts TreeMap doesn't support visualMap on a different dimension easily for color AND size.
+            // Wait, visualMap maps "value". But "value" is Market Cap.
+            // We need to map Color to "change".
+            // Solution: Use `itemStyle` callback? No, itemStyle in data.
+            
+            const maxChange = 5; // +/- 5% saturation
+            formattedData.forEach(item => {
+                const change = item.change;
+                let color = '#334155'; // Zero
+                
+                // Color Scale: Green (-Max) -> Gray (0) -> Red (+Max)
+                // RGB:
+                // Red: 239, 68, 68 (#ef4444)
+                // Green: 34, 197, 94 (#22c55e)
+                // Gray: 51, 65, 85 (#334155) or #64748b
+                
+                // Simple opacity approach or manual HSL
+                if (change > 0) {
+                    // Red intensity
+                    const intensity = Math.min(Math.abs(change) / maxChange, 1);
+                    // Base red #ef4444 is too bright? Use typical stock red #e11d21
+                    // Opacity approach:
+                    // color = `rgba(220, 38, 38, ${0.3 + 0.7 * intensity})`; 
+                    // Let's use predefined steps for better look
+                    if (change > 3) color = '#b91c1c'; // red-700
+                    else if (change > 1) color = '#dc2626'; // red-600
+                    else color = '#ef4444'; // red-500
+                    
+                    // Better: Interpolate
+                    // Just use fixed buckets for simplicity
+                    if (change > 4) color = '#991b1b';
+                    else if (change > 2) color = '#b91c1c';
+                    else if (change > 0) color = '#dc2626';
+                } else if (change < 0) {
+                    if (change < -4) color = '#166534';
+                    else if (change < -2) color = '#15803d';
+                    else color = '#22c55e'; // green-500
+                } else {
+                    color = '#475569';
+                }
+                
+                item.itemStyle = { color: color };
+            });
+
+            // Update series data with colors
+            option.series[0].data = formattedData;
+
+            myChart.setOption(option);
+        }
+
+        async function refreshMap() {
+            document.getElementById('loading').style.display = 'flex';
+            const data = await fetchHeatmapData();
+            document.getElementById('loading').style.display = 'none';
+            if (data && data.length > 0) {
+                renderChart(data);
+            } else {
+                // Show error or empty state
+                document.getElementById('heatmap-container').innerHTML = '<div class="flex items-center justify-center h-full text-slate-500">暂无数据或加载失败</div>';
+            }
+        }
+
+        // Init
+        refreshMap();
+        
+        // Auto refresh every 60s
+        setInterval(refreshMap, 60000);
+
+    </script>
+</body>
+</html>

@@ -175,6 +175,14 @@ async def read_pro(request: Request):
         return "<h1>Rox Quant</h1><p>模板未找到</p>"
     return templates.TemplateResponse("index.html", {"request": request})
 
+
+@app.get("/map", response_class=HTMLResponse)
+async def read_market_map(request: Request):
+    """全市场热力图"""
+    if templates is None:
+        return "<h1>Rox Quant</h1><p>模板未找到</p>"
+    return templates.TemplateResponse("market_map.html", {"request": request})
+
 # ============ 健康检查 ============
 @app.get("/health")
 async def health_check():

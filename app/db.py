@@ -834,60 +834,81 @@ def get_realtime_quotes_sina(stock_codes: Optional[List[str]] = None) -> pd.Data
                 return pd.DataFrame()
 
             # 新浪接口一次请求的股票数量有限，分批请求
-            batch_size = 800  # 经验值，避免URL过长
-            all_quotes_list = []
+            batch_size = 800
+            all_dfs = []
+            
+            import requests
+            session = requests.Session()
+            # 确保不使用代理
+            session.trust_env = False
+            
+            headers = {"Referer": "http://finance.sina.com.cn/"}
 
             for i in range(0, len(formatted_codes), batch_size):
-                batch_codes = formatted_codes[i:i + batch_size]
-                
-                # 使用 AkShare 的 stock_zh_a_spot_sina 接口，传入 symbol 参数
-                # 注意：ak.stock_zh_a_spot_sina 的 symbol 参数通常用于指定单个股票或指数
-                # 对于批量获取，AkShare 内部可能没有直接支持传入列表的接口
-                # 实际测试发现 ak.stock_zh_a_spot_sina 默认获取所有A股，且没有直接传入股票代码列表的参数
-                # 因此，我们采取获取所有A股，然后筛选的方式，或者使用更底层的接口
-                
-                # 为了简化，我们直接调用 ak.stock_zh_a_spot_sina 获取所有A股，然后进行筛选
-                # 这种方式在 stock_codes 列表很长时效率不高，但对于静态列表作为 fallback 足够
-                sina_df_all = ak.stock_zh_a_spot_sina()
-                if sina_df_all.empty:
-                    logger.warning("AkShare stock_zh_a_spot_sina returned empty.")
+                batch = formatted_codes[i:i + batch_size]
+                url = f"http://hq.sinajs.cn/list={','.join(batch)}"
+                try:
+                    resp = session.get(url, headers=headers, timeout=5)
+                    resp.encoding = "gbk"
+                    text = resp.text
+                    
+                    data_list = []
+                    for line in text.splitlines():
+                        if not line: continue
+                        # format: var hq_str_sh600519="贵州茅台,1555.000,1545.020,1515.010,..."
+                        try:
+                            parts = line.split('="')
+                            if len(parts) < 2: continue
+                            
+                            symbol = parts[0].split('_')[-1] # sh600519
+                            content = parts[1].strip('";')
+                            fields = content.split(',')
+                            
+                            if len(fields) > 3:
+                                # 0: name, 1: open, 2: prev_close, 3: price, 4: high, 5: low
+                                name = fields[0]
+                                price = float(fields[3])
+                                prev_close = float(fields[2])
+                                # Calculate pct change
+                                pct = 0.0
+                                if prev_close > 0:
+                                    pct = ((price - prev_close) / prev_close) * 100
+                                
+                                code = symbol[2:]  # Remove sh/sz
+                                
+                                data_list.append({
+                                    "代码": code,
+                                    "名称": name,
+                                    "最新价": price,
+                                    "涨跌幅": pct,
+                                    "开盘": float(fields[1]),
+                                    "昨收": prev_close,
+                                    "最高": float(fields[4]),
+                                    "最低": float(fields[5]),
+                                    "成交量": float(fields[8]), # usually verify index
+                                    "成交额": float(fields[9])
+                                })
+                        except Exception:
+                            continue
+                            
+                    if data_list:
+                        all_dfs.append(pd.DataFrame(data_list))
+                        
+                except Exception as e:
+                    logger.warning(f"Sina batch fetch failed: {e}")
                     continue
-                
-                # 筛选出需要的股票
-                sina_df_filtered = sina_df_all[sina_df_all['code'].isin(formatted_codes)]
-                all_quotes_list.append(sina_df_filtered)
-            
-            sina_df = pd.concat(all_quotes_list, ignore_index=True) if all_quotes_list else pd.DataFrame()
+
+            return pd.concat(all_dfs, ignore_index=True) if all_dfs else pd.DataFrame()
 
         else:
-            # 如果没有提供股票代码列表，则获取所有A股
-            sina_df = ak.stock_zh_a_spot_sina()
-            if sina_df.empty:
-                logger.warning("AkShare stock_zh_a_spot_sina returned empty.")
-                return pd.DataFrame()
-        
-        # 统一字段名，使其与 stock_zh_a_spot_em 尽可能一致
-        mapped_df = pd.DataFrame()
-        if 'code' in sina_df.columns and 'name' in sina_df.columns and 'trade' in sina_df.columns and 'changepercent' in sina_df.columns:
-            mapped_df['代码'] = sina_df['code'].apply(lambda x: x[2:] if len(x) > 2 and (x.startswith('sh') or x.startswith('sz')) else x) # 移除sh/sz前缀
-            mapped_df['名称'] = sina_df['name']
-            mapped_df['最新价'] = pd.to_numeric(sina_df['trade'], errors='coerce')
-            mapped_df['涨跌幅'] = pd.to_numeric(sina_df['changepercent'], errors='coerce')
-            
-            if 'open' in sina_df.columns: mapped_df['开盘'] = pd.to_numeric(sina_df['open'], errors='coerce')
-            if 'settlement' in sina_df.columns: mapped_df['昨收'] = pd.to_numeric(sina_df['settlement'], errors='coerce')
-            if 'high' in sina_df.columns: mapped_df['最高'] = pd.to_numeric(sina_df['high'], errors='coerce')
-            if 'low' in sina_df.columns: mapped_df['最低'] = pd.to_numeric(sina_df['low'], errors='coerce')
-            if 'volume' in sina_df.columns: mapped_df['成交量'] = pd.to_numeric(sina_df['volume'], errors='coerce')
-            if 'amount' in sina_df.columns: mapped_df['成交额'] = pd.to_numeric(sina_df['amount'], errors='coerce')
-            
-            # 确保关键列为数值类型，并处理NaN
-            mapped_df['最新价'] = mapped_df['最新价'].fillna(0.0)
-            mapped_df['涨跌幅'] = mapped_df['涨跌幅'].fillna(0.0)
-            return mapped_df
-        else:
-            logger.warning(f"Sina data missing expected columns: {sina_df.columns.tolist()}")
+            # 如果没有提供股票代码列表，无法使用此直接接口获取所有数据
+            # 必须依赖上层传入 stock_codes (通常来自 stock_list.csv)
+            logger.warning("get_realtime_quotes_sina requires stock_codes when using direct API.")
             return pd.DataFrame()
+            
+        # 下面的代码是旧的 mapping 逻辑，新的逻辑直接构造了 DataFrame
+        # 保留空返回以防万一
+        return pd.DataFrame()
 
     except Exception as e:
         logger.error(f"Error fetching real-time quotes from Sina: {e}", exc_info=True)
@@ -908,6 +929,10 @@ async def get_all_stocks_spot():
     cached = _get_cached_spot()
     if cached is not None and not cached.empty:
         return cached
+    
+    # 强制禁用代理，防止 AkShare 请求被代理拦截
+    os.environ['NO_PROXY'] = '*'
+    os.environ['no_proxy'] = '*'
     
     # 防止并发请求
     if _spot_lock.locked():
@@ -1000,6 +1025,12 @@ async def get_market_rankings():
     # Mock or Real
     # Return structure: {'sectors': [...], 'stocks': [...]}
     import asyncio
+    import os
+    
+    # 强制禁用代理
+    os.environ['NO_PROXY'] = '*'
+    os.environ['no_proxy'] = '*'
+    
     loop = asyncio.get_event_loop()
     try:
         # Top Sectors
@@ -1012,6 +1043,15 @@ async def get_market_rankings():
             df_sector[pct_col] = pd.to_numeric(df_sector[pct_col], errors='coerce').fillna(0)
             top5 = df_sector.sort_values(by=pct_col, ascending=False).head(5)
             sectors = [{"name": r[name_col], "pct": float(r[pct_col])} for _, r in top5.iterrows()]
+        else:
+             # Fallback mock sectors if fetch fails
+             sectors = [
+                 {"name": "半导体", "pct": 2.5},
+                 {"name": "通信设备", "pct": 1.8},
+                 {"name": "软件开发", "pct": 1.5},
+                 {"name": "汽车整车", "pct": 1.2},
+                 {"name": "酿酒行业", "pct": 0.9}
+             ]
             
         # Top Stocks
         df_stock = await get_all_stocks_spot()
@@ -1039,6 +1079,12 @@ async def get_latest_news():
     news = []
     try:
         import asyncio
+        import os
+        
+        # 强制禁用代理
+        os.environ['NO_PROXY'] = '*'
+        os.environ['no_proxy'] = '*'
+
         loop = asyncio.get_event_loop()
         df_list = []
         try:

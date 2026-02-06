@@ -494,39 +494,91 @@ async def get_stock_diagnose(code: str = Query(..., description="股票代码, �
     对单个股票进行诊断, 返回技术面、基本面、资金面的综合评分。部分数据失败时仍返回可用结论。
     """
     code6 = _normalize_code(code)
-    info = await _get_stock_basic_info(code6)
+    
+    # 0. Info Container
+    info = {"code": code6, "name": code6}
+    
+    # Define tasks results containers
+    tech_analysis = {"score": 0, "summary": "技术面数据加载超时", "indicators": {}}
+    fund_analysis = {"score": 50, "summary": "基本面数据加载超时", "metrics": {}}
+    flow_analysis = {"score": 50, "summary": "资金流数据加载超时", "flow": {}}
+    news_items = []
+    hist_data = None
+    
+    # Task 0: Fetch Basic Info (Name)
+    async def _fetch_info():
+        return await _get_stock_basic_info(code6)
 
-    # 1. 历史 K 线（技术面依赖）
-    hist_data = pd.DataFrame()
-    try:
+    # Task 1: Fetch History (Technicals)
+    async def _fetch_history():
         end_date = datetime.now().strftime('%Y%m%d')
         start_date = (datetime.now() - timedelta(days=365)).strftime('%Y%m%d')
-        
-        @retry_request(max_retries=3, delay=1.0)
-        def _get_hist():
-            return ak.stock_zh_a_hist(symbol=code6, period="daily", start_date=start_date, end_date=end_date, adjust="qfq")
-            
-        hist_data = await run_in_executor(_get_hist)
-    except Exception as e:
-        logger.warning(f"诊断获取历史K线失败 {code6}: {e}")
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: ak.stock_zh_a_hist(symbol=code6, period="daily", start_date=start_date, end_date=end_date, adjust="qfq"))
 
-    tech_analysis = calculate_technicals(hist_data) if hist_data is not None and not hist_data.empty else {"score": 0, "summary": "历史数据不足，技术面暂不可用。", "indicators": {}}
+    # Task 2: Fetch Fundamentals
+    async def _fetch_fundamentals():
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, calculate_fundamentals, code6)
+
+    # Task 3: Fetch Flow
+    async def _fetch_flow():
+        loop = asyncio.get_running_loop()
+        # calculate_fund_flow runs akshare internally
+        return await loop.run_in_executor(None, calculate_fund_flow, code6)
+
+    # Task 4: Fetch News
+    async def _fetch_news():
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, lambda: _get_stock_news(code6, 3))
+        
+    # Run ALL in parallel with timeout (Total 10s limit)
     try:
-        fund_analysis = await run_in_executor(calculate_fundamentals, code6)
+        results = await asyncio.wait_for(
+            asyncio.gather(
+                _fetch_info(),
+                _fetch_history(),
+                _fetch_fundamentals(),
+                _fetch_flow(),
+                _fetch_news(),
+                return_exceptions=True
+            ),
+            timeout=10.0
+        )
+        
+        # Process Info
+        if not isinstance(results[0], Exception) and isinstance(results[0], dict):
+             info = results[0]
+
+        # Process History
+        if not isinstance(results[1], Exception) and results[1] is not None:
+             hist_data = results[1]
+             if not hist_data.empty:
+                 tech_analysis = calculate_technicals(hist_data)
+        elif isinstance(results[1], Exception):
+             logger.warning(f"Hist fetch failed: {results[1]}")
+
+        # Process Fundamentals
+        if not isinstance(results[2], Exception) and isinstance(results[2], dict):
+             fund_analysis = results[2]
+
+        # Process Flow
+        if not isinstance(results[3], Exception) and isinstance(results[3], dict):
+             flow_analysis = results[3]
+
+        # Process News
+        if not isinstance(results[4], Exception) and isinstance(results[4], list):
+             news_items = results[4]
+             
     except Exception as e:
-        logger.warning(f"诊断基本面失败 {code6}: {e}")
-        fund_analysis = {"score": 50, "summary": "基本面数据暂不可用，按中性计分。", "metrics": {}}
-    try:
-        flow_analysis = await run_in_executor(calculate_fund_flow, code6)
-    except Exception as e:
-        logger.warning(f"诊断资金流失败 {code6}: {e}")
-        flow_analysis = {"score": 50, "summary": "资金流数据暂不可用，按中性计分。", "flow": {}}
-    
-    # 获取资讯
-    news_items = await run_in_executor(_get_stock_news, code6, 3)
+        logger.error(f"Diagnose parallel fetch error: {e}")
 
     # 3. 综合评分 (权重: 技术40%, 基本面40%, 资金20%)
-    overall_score = int(tech_analysis['score'] * 0.4 + fund_analysis['score'] * 0.4 + flow_analysis['score'] * 0.2)
+    t_score = tech_analysis.get('score', 0)
+    f_score = fund_analysis.get('score', 50)
+    fl_score = flow_analysis.get('score', 50)
+    
+    overall_score = int(t_score * 0.4 + f_score * 0.4 + fl_score * 0.2)
     overall_score = max(0, min(100, overall_score))
 
     # 4. 补充预测数据 (阻力/支撑/量能)
@@ -561,6 +613,13 @@ async def get_stock_diagnose(code: str = Query(..., description="股票代码, �
         summary += "表现一般，存在一些不确定性，建议谨慎观察。"
     else:
         summary += "表现较弱，存在明显短板，建议规避。"
+    
+    # Append loaded status to summary
+    fails = []
+    if tech_analysis['summary'] == "技术面数据加载超时": fails.append("技术面")
+    if fund_analysis['summary'] == "基本面数据加载超时": fails.append("基本面")
+    if fails:
+        summary += f" (注: {'、'.join(fails)}数据加载超时，评分可能不准确)"
 
     return {
         "code": code6,
@@ -568,9 +627,9 @@ async def get_stock_diagnose(code: str = Query(..., description="股票代码, �
         "overall_score": overall_score,
         "summary": summary,
         "scores": {
-            "technical": tech_analysis.get("score", 0),
-            "fundamental": fund_analysis.get("score", 0),
-            "fund_flow": flow_analysis.get("score", 0),
+            "technical": t_score,
+            "fundamental": f_score,
+            "fund_flow": fl_score,
             "sentiment": int(np.clip(overall_score + np.random.randint(-10, 11), 40, 85)),
             "industry": int(np.clip(overall_score + np.random.randint(-5, 10), 50, 90)),
         },

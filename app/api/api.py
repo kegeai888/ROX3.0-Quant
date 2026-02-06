@@ -54,6 +54,10 @@ api_group.include_router(ml.router)
 from app.api.endpoints import portfolio
 api_group.include_router(portfolio.router, prefix="/portfolio", tags=["portfolio"])
 
+# 多智能体分析 (新添加)
+from app.api.endpoints import agents
+api_group.include_router(agents.router, tags=["agents"])
+
 # 将API组添加到主路由
 api_router.include_router(api_group)
 

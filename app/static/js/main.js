@@ -2,12 +2,13 @@
 import { AIChatWidget } from './modules/chat.js';
 import { initProfessionalSystem, switchProfessionalTab, fetchProfessionalSignal, calculateRisk } from './modules/professional-system.js';
 import { AIAgentController } from './modules/ai_agent.js';
-import { loadWatchlist, removeStockFromWatchlist } from './watchlist.js';
+import { loadWatchlist, removeStockFromWatchlist, toggleWatchlist, isStockInWatchlist, setWatchlistChangeCallback } from './watchlist.js';
+import './feature_handlers.js'; // Portfolio, Risk, AutoTrade, Replay, Conditions, TDX
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("ROX 3.0 Core Initialized");
-    
+
     try {
         if (typeof AIChatWidget === 'function') {
             window.roxChat = new AIChatWidget();
@@ -19,19 +20,60 @@ document.addEventListener('DOMContentLoaded', () => {
             window.aiAgent = new AIAgentController();
         }
     } catch (e) { console.error("AI Agent Init Failed", e); }
-    
+
     window.switchProfessionalTab = switchProfessionalTab;
     window.fetchProfessionalSignal = fetchProfessionalSignal;
     window.calculateRisk = calculateRisk;
     window.initProfessionalSystem = initProfessionalSystem;
     window.loadWatchlist = loadWatchlist;
     window.removeStockFromWatchlist = removeStockFromWatchlist;
-    
+
+    // Watchlist UI Binding
+    const addToWlBtn = document.getElementById('add-to-watchlist-btn');
+    if (addToWlBtn) {
+        addToWlBtn.addEventListener('click', async () => {
+            const code = window.currentStockCode;
+            const name = document.getElementById('stock-name-header')?.textContent;
+            await toggleWatchlist(code, name);
+        });
+    }
+
+    // Register callback to update star icon when watchlist changes
+    setWatchlistChangeCallback(() => {
+        updateWatchlistButtonState(window.currentStockCode);
+    });
+
     initMainLogic();
 });
 
 // --- Window Management ---
 window.currentStockCode = '600519';
+
+function updateWatchlistButtonState(code) {
+    const btn = document.getElementById('add-to-watchlist-btn');
+    if (!btn) return;
+
+    const icon = btn.querySelector('i');
+    if (isStockInWatchlist(code)) {
+        // In watchlist: Filled star, yellow
+        if (icon) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+            btn.classList.add('text-yellow-400');
+            btn.classList.remove('text-slate-600');
+        }
+        btn.title = '移除自选';
+    } else {
+        // Not in watchlist: Empty star, gray
+        if (icon) {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            btn.classList.remove('text-yellow-400');
+            btn.classList.add('text-slate-600');
+        }
+        btn.title = '加入自选';
+    }
+}
 
 function selectStock(code, name) {
     window.currentStockCode = code;
@@ -39,10 +81,13 @@ function selectStock(code, name) {
     const c = document.getElementById('stock-code-header');
     if (n) n.textContent = name || code;
     if (c) c.textContent = code;
-    
+
+    // Update Watchlist UI
+    updateWatchlistButtonState(code);
+
     // Sync price immediately
     updateStockHeader(code);
-    
+
     fetchKLineData('daily');
     updateIndicatorChart(code);
 }
@@ -57,7 +102,7 @@ async function updateStockHeader(code) {
         });
         const data = await resp.json();
         if (data.error) return;
-        
+
         const priceEl = document.querySelector('.price-font.text-2xl');
         if (priceEl) {
             priceEl.textContent = data.p_now.toFixed(2);
@@ -65,21 +110,21 @@ async function updateStockHeader(code) {
             const change = data.p_change || 0;
             priceEl.className = `text-2xl font-mono font-bold price-font ${change >= 0 ? 'text-up' : 'text-down'}`;
         }
-        
+
         // Update change and percent
         const changeEls = document.querySelectorAll('#stock-name-header ~ div .text-up, #stock-name-header ~ div .text-down');
         if (changeEls.length >= 2) {
-             const changeVal = data.p_change || 0;
-             const pctVal = data.p_pct || 0;
-             const cls = changeVal >= 0 ? 'text-up' : 'text-down';
-             
-             changeEls[0].textContent = (changeVal > 0 ? '+' : '') + changeVal.toFixed(2);
-             changeEls[0].className = cls;
-             
-             changeEls[1].textContent = (pctVal > 0 ? '+' : '') + pctVal.toFixed(2) + '%';
-             changeEls[1].className = cls;
+            const changeVal = data.p_change || 0;
+            const pctVal = data.p_pct || 0;
+            const cls = changeVal >= 0 ? 'text-up' : 'text-down';
+
+            changeEls[0].textContent = (changeVal > 0 ? '+' : '') + changeVal.toFixed(2);
+            changeEls[0].className = cls;
+
+            changeEls[1].textContent = (pctVal > 0 ? '+' : '') + pctVal.toFixed(2) + '%';
+            changeEls[1].className = cls;
         }
-        
+
     } catch (e) {
         console.error("Failed to sync header price", e);
     }
@@ -94,7 +139,7 @@ async function fetchAndRenderFenshi() {
     const loadingEl = document.getElementById('fenshi-loading');
     const code = window.currentStockCode || '600519';
     if (!chartEl || !wrap) return;
-        if (loadingEl) { loadingEl.classList.remove('hidden'); loadingEl.textContent = '分时图加载中…'; }
+    if (loadingEl) { loadingEl.classList.remove('hidden'); loadingEl.textContent = '分时图加载中…'; }
     try {
         const r = await fetch(`/api/market/fenshi?code=${encodeURIComponent(code)}`);
         const d = await r.json().catch(() => ({}));
@@ -224,11 +269,10 @@ async function loadF10ValueLaw() {
                     <div>价格偏离度：<span class="${data.deviation != null && data.deviation < 0 ? 'text-up' : 'text-down'} font-mono">${devPct}</span></div>
                 </div>
                 <div>剩余价值创造能力评分：<span class="text-emerald-400 font-mono">${surplus}</span> / 100</div>
-                <div>信号：<span class="font-mono ${
-                    signal === 'strong_buy' ? 'text-up' :
-                    signal === 'buy' ? 'text-up' :
+                <div>信号：<span class="font-mono ${signal === 'strong_buy' ? 'text-up' :
+                signal === 'buy' ? 'text-up' :
                     signal === 'sell' || signal === 'strong_sell' ? 'text-down' : 'text-gray-300'
-                }">${signal}</span></div>
+            }">${signal}</span></div>
                 <div class="mt-2 text-gray-300">${comment}</div>
             </div>
         `;
@@ -238,13 +282,13 @@ async function loadF10ValueLaw() {
 }
 
 // Open Professional Window (Deep Analysis)
-window.openProfessionalWindow = function() {
+window.openProfessionalWindow = function () {
     // Check if the professional module is loaded
     if (typeof import('./modules/professional-system.js') !== 'undefined') {
         // If it's a module, we might need to access it differently or it attaches to window
         // Assuming professional-system.js exports initProfessionalSystem but also maybe we can just load the UI
     }
-    
+
     // For now, we'll check if the modal exists, if not create it or show it
     let modal = document.getElementById('professional-modal');
     if (!modal) {
@@ -252,13 +296,13 @@ window.openProfessionalWindow = function() {
         // Actually, professional-system.js likely handles this. 
         // Let's try to import and init it dynamically if needed.
         import('/static/js/modules/professional-system.js').then(module => {
-             if (module && module.initProfessionalSystem) {
-                 module.initProfessionalSystem();
-                 // Show the modal
-                 const m = document.getElementById('professional-modal');
-                 if(m) m.classList.remove('hidden');
-                 else alert("深度分析模块初始化失败：界面未找到");
-             }
+            if (module && module.initProfessionalSystem) {
+                module.initProfessionalSystem();
+                // Show the modal
+                const m = document.getElementById('professional-modal');
+                if (m) m.classList.remove('hidden');
+                else alert("深度分析模块初始化失败：界面未找到");
+            }
         }).catch(e => {
             console.error("Failed to load professional system:", e);
             alert("无法加载深度分析模块");
@@ -267,25 +311,25 @@ window.openProfessionalWindow = function() {
         modal.classList.remove('hidden');
         // Trigger analysis for current stock
         if (window.currentStockCode) {
-             const input = document.getElementById('prof-signal-symbol');
-             if(input) {
-                 input.value = window.currentStockCode;
-                 // Optionally auto-click analyze
-                 // if(typeof fetchProfessionalSignal === 'function') fetchProfessionalSignal(); 
-                 // But fetchProfessionalSignal is likely not global.
-                 // We need to rely on the module's event listeners.
-             }
+            const input = document.getElementById('prof-signal-symbol');
+            if (input) {
+                input.value = window.currentStockCode;
+                // Optionally auto-click analyze
+                // if(typeof fetchProfessionalSignal === 'function') fetchProfessionalSignal(); 
+                // But fetchProfessionalSignal is likely not global.
+                // We need to rely on the module's event listeners.
+            }
         }
     }
 };
 
-window.runAIBacktest = function() {
+window.runAIBacktest = function () {
     // Check if window exists
-    if(document.getElementById('ai-backtest-modal')) {
+    if (document.getElementById('ai-backtest-modal')) {
         document.getElementById('ai-backtest-modal').classList.remove('hidden');
         return;
     }
-    
+
     // Create Modal (Placeholder for Qbot UI)
     const modal = document.createElement('div');
     modal.id = 'ai-backtest-modal';
@@ -302,11 +346,11 @@ window.runAIBacktest = function() {
             <div class="grid grid-cols-3 gap-4 mb-4">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">开始日期</label>
-                    <input id="ai-backtest-start" type="date" class="w-full bg-[#111] border border-gray-700 rounded px-2 py-1 text-xs text-white" value="${defaultStart.toISOString().slice(0,10)}">
+                    <input id="ai-backtest-start" type="date" class="w-full bg-[#111] border border-gray-700 rounded px-2 py-1 text-xs text-white" value="${defaultStart.toISOString().slice(0, 10)}">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">结束日期</label>
-                    <input id="ai-backtest-end" type="date" class="w-full bg-[#111] border border-gray-700 rounded px-2 py-1 text-xs text-white" value="${defaultEnd.toISOString().slice(0,10)}">
+                    <input id="ai-backtest-end" type="date" class="w-full bg-[#111] border border-gray-700 rounded px-2 py-1 text-xs text-white" value="${defaultEnd.toISOString().slice(0, 10)}">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">初始资金</label>
@@ -403,10 +447,10 @@ window.runAIBacktestSubmit = runAIBacktestSubmit;
 
 // --- Professional System Window ---
 
-window.openProfessionalWindow = function() {
+window.openProfessionalWindow = function () {
     let modalId = 'prof-system-modal';
     let modal = document.getElementById(modalId);
-    
+
     if (modal) {
         modal.classList.remove('hidden');
         return;
@@ -416,7 +460,7 @@ window.openProfessionalWindow = function() {
     modal.id = modalId;
     modal.className = 'fixed top-[10%] left-[10%] w-[900px] h-[700px] bg-[#0c0c0c] border border-gray-700 shadow-2xl z-40 flex flex-col rounded-lg overflow-hidden';
     modal.style.boxShadow = '0 0 50px rgba(0,0,0,0.8)';
-    
+
     modal.innerHTML = `
         <!-- Header -->
         <div class="h-10 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4 select-none cursor-move" id="${modalId}-header">
@@ -517,14 +561,14 @@ window.openProfessionalWindow = function() {
             
         </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Drag Logic (Reuse)
     setupDraggable(modal, `${modalId}-header`);
-    
+
     // Initialize Logic
-    if(typeof initProfessionalSystem === 'function') {
+    if (typeof initProfessionalSystem === 'function') {
         initProfessionalSystem();
     }
 };
@@ -533,7 +577,7 @@ function setupDraggable(modal, headerId) {
     const header = document.getElementById(headerId);
     let isDragging = false;
     let startX, startY, initialLeft, initialTop;
-    
+
     header.addEventListener('mousedown', (e) => {
         isDragging = true;
         startX = e.clientX;
@@ -545,7 +589,7 @@ function setupDraggable(modal, headerId) {
         modal.style.left = initialLeft + 'px';
         modal.style.top = initialTop + 'px';
     });
-    
+
     window.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         const dx = e.clientX - startX;
@@ -553,7 +597,7 @@ function setupDraggable(modal, headerId) {
         modal.style.left = (initialLeft + dx) + 'px';
         modal.style.top = (initialTop + dy) + 'px';
     });
-    
+
     window.addEventListener('mouseup', () => { isDragging = false; });
 }
 
@@ -604,7 +648,7 @@ function renderSkillsList() {
             btn.classList.toggle('text-green-200', next);
             btn.classList.toggle('bg-gray-700', !next);
             btn.classList.toggle('text-gray-400', !next);
-            
+
             // Trigger chart update to reflect visibility changes
             if (typeof renderKLineChart === 'function' && window._cachedKLineData) {
                 renderKLineChart(window._cachedKLineData, document.querySelector('[data-period].active')?.dataset.period || 'daily');
@@ -676,15 +720,45 @@ let spotListTotal = 0;
 
 function renderSpotRow(s, listEl) {
     const div = document.createElement('div');
-    div.className = 'grid grid-cols-[1fr_80px_60px] px-2 py-1 border-b border-[#1a1a1a] hover:bg-[#222] cursor-pointer stock-row';
+    div.className = 'grid grid-cols-[1fr_80px_60px] px-2 py-1 border-b border-[#1a1a1a] hover:bg-[#222] cursor-pointer stock-row group relative';
     div.onclick = () => selectStock(s.code, s.name);
     const colorClass = (s.pct || 0) > 0 ? 'text-up' : ((s.pct || 0) < 0 ? 'text-down' : 'text-gray-400');
     div.innerHTML = `
-        <div><div class="text-yellow-500 font-bold">${s.name}</div><div class="text-xxs text-gray-500">${s.code}</div></div>
+        <div class="relative">
+            <div class="flex items-center space-x-2">
+                <span class="text-yellow-500 font-bold">${s.name}</span>
+                <span class="text-xxs text-gray-500">${s.code}</span>
+                <button class="text-gray-600 hover:text-yellow-500 p-1 rounded transition-colors ml-auto" title="加入自选" onclick="event.stopPropagation(); addToWatchlist('${s.code}', '${s.name}')">
+                    <i class="fas fa-plus-circle text-xs"></i>
+                </button>
+            </div>
+        </div>
         <div class="text-right ${colorClass} self-center font-mono">${(s.price || 0).toFixed(2)}</div>
         <div class="text-right ${colorClass} self-center font-mono">${(s.pct || 0) > 0 ? '+' : ''}${s.pct || 0}%</div>
     `;
     listEl.appendChild(div);
+}
+
+window.addToWatchlist = async function (code, name) {
+    try {
+        const resp = await fetch('/api/market/watchlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stock_code: code, stock_name: name })
+        });
+        const res = await resp.json();
+        if (resp.ok) {
+            showToast(`已添加 ${name} 到自选列表`);
+            // Refresh watchlist if it is currently visible? 
+            // Maybe just trigger a refresh event
+            if (typeof loadWatchlist === 'function') loadWatchlist(true); // Assuming loadWatchlist exists and can refresh
+        } else {
+            showToast(res.error || '添加失败', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showToast('添加失败: ' + e.message, 'error');
+    }
 }
 
 async function loadSpotList(append = false) {
@@ -784,7 +858,7 @@ function initMainLogic() {
                 const blob = new Blob([JSON.stringify(d.items || [], null, 2)], { type: 'application/json' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = `rox-watchlist-${new Date().toISOString().slice(0,10)}.json`;
+                a.download = `rox-watchlist-${new Date().toISOString().slice(0, 10)}.json`;
                 a.click();
                 URL.revokeObjectURL(a.href);
                 if (typeof showToast === 'function') showToast('已导出');
@@ -870,35 +944,35 @@ function initMainLogic() {
 async function loadHeaderIndices() {
     const container = document.getElementById('header-indices');
     if (!container) return;
-    
+
     try {
         const r = await fetch('/api/market/indices');
         const data = await r.json().catch(() => ({}));
         const indices = data.indices || [];
-        
+
         // Map index names to element data-index attributes
         const mapping = {
             '上证指数': 'sh',
-            '深证成指': 'sz', 
+            '深证成指': 'sz',
             '创业板指': 'cyb'
         };
-        
+
         for (const idx of indices) {
             const key = mapping[idx.name];
             if (!key) continue;
-            
+
             const item = container.querySelector(`[data-index="${key}"]`);
             if (!item) continue;
-            
+
             const priceEl = item.querySelector('.index-price');
             const pctEl = item.querySelector('.index-pct');
-            
+
             if (priceEl) {
                 priceEl.textContent = idx.price?.toFixed(2) || '----';
                 priceEl.classList.remove('skeleton-text', 'text-slate-400');
                 priceEl.classList.add(idx.pct >= 0 ? 'text-up' : 'text-down');
             }
-            
+
             if (pctEl) {
                 const pctVal = idx.pct || 0;
                 pctEl.textContent = `${pctVal >= 0 ? '+' : ''}${pctVal.toFixed(2)}%`;
@@ -1037,7 +1111,7 @@ function openContradictions() {
             const snap = d.snapshot || {};
             content.innerHTML = `
                 <div class="space-y-3">
-                    <div class="text-xs text-gray-500">市场快照：上涨 ${snap.up ?? '--'} / 下跌 ${snap.down ?? '--'} ｜ 成交额 ${snap.volume_yi != null ? snap.volume_yi.toFixed(0)+'亿' : '--'} ｜ 北向 ${snap.north_yi != null ? snap.north_yi.toFixed(2)+'亿' : '--'} ｜ 主力 ${snap.main_yi != null ? snap.main_yi.toFixed(2)+'亿' : '--'}</div>
+                    <div class="text-xs text-gray-500">市场快照：上涨 ${snap.up ?? '--'} / 下跌 ${snap.down ?? '--'} ｜ 成交额 ${snap.volume_yi != null ? snap.volume_yi.toFixed(0) + '亿' : '--'} ｜ 北向 ${snap.north_yi != null ? snap.north_yi.toFixed(2) + '亿' : '--'} ｜ 主力 ${snap.main_yi != null ? snap.main_yi.toFixed(2) + '亿' : '--'}</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="openValueScatter()" class="text-xxs px-2 py-1 rounded bg-sky-700 hover:bg-sky-600 text-white">打开价值散点</button>
                         <button type="button" onclick="applyRegimeToValueScatter()" class="text-xxs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-gray-200 border border-slate-700">按主矛盾筛选</button>
@@ -1087,7 +1161,7 @@ async function ensureMarketRegime(force = false) {
             window.roxMarketRegime = { data: d, ts: Date.now() };
             return d;
         }
-    } catch (_) {}
+    } catch (_) { }
     return cached?.data || null;
 }
 
@@ -1283,7 +1357,7 @@ function openValueScatter() {
                         opacity: valueScatterFollowRegime ? 0.10 : 0.65
                     },
                     silent: true
-                },{
+                }, {
                     type: 'scatter',
                     data: ptsFocus,
                     symbolSize: (d) => {
@@ -1494,16 +1568,16 @@ let zoomEnd = 100;
 
 function initKLineChart() {
     const container = document.getElementById('kline-chart-container');
-    if(!container) return;
-    
+    if (!container) return;
+
     // ECharts Init
     klineChart = echarts.init(container);
-    
+
     // Bind Period Buttons
     const periods = ['daily', 'weekly', 'monthly', '1min', '5min', '15min', '30min', '60min'];
     periods.forEach(p => {
         const btn = document.querySelector(`[data-period="${p}"]`);
-        if(btn) {
+        if (btn) {
             btn.addEventListener('click', () => fetchKLineData(p));
         }
     });
@@ -1521,7 +1595,7 @@ function initKLineChart() {
 
     // Load Default Data (Daily)
     fetchKLineData('daily');
-    
+
     window.addEventListener('resize', () => klineChart.resize());
 }
 
@@ -1542,13 +1616,13 @@ function calculateMA(dayCount, data) {
 }
 
 function renderKLineChart(data, period = 'daily') {
-    if(!klineChart) return;
-    
+    if (!klineChart) return;
+
     try {
         // Prepare MarkPoints for Buy/Sell Signals
         const markPoints = [];
         const skillsVisible = typeof getSkillsVisible === 'function' ? getSkillsVisible() : {};
-        
+
         // Helper to check if a skill is visible (default true)
         const isSkillVisible = (id) => skillsVisible[id] !== false;
 
@@ -1566,7 +1640,7 @@ function renderKLineChart(data, period = 'daily') {
                     }
                 });
             }
-            
+
             // Precision Buy Signals (对应: xianren_zhilu - 假设)
             if (data.indicators.precision_buy && isSkillVisible('xianren_zhilu')) {
                 data.indicators.precision_buy.forEach((signal, index) => {
@@ -1582,7 +1656,7 @@ function renderKLineChart(data, period = 'daily') {
                     }
                 });
             }
-            
+
             // Precision Sell Signals (对应: xianren_zhilu - 假设)
             if (data.indicators.precision_sell && isSkillVisible('xianren_zhilu')) {
                 data.indicators.precision_sell.forEach((signal, index) => {
@@ -1627,7 +1701,7 @@ function renderKLineChart(data, period = 'daily') {
                     }
                 });
             }
-            
+
             // XunLongJue Signals (寻龙诀) (对应: xunlongjue)
             if (data.indicators.xunlong_signal && isSkillVisible('xunlongjue')) {
                 data.indicators.xunlong_signal.forEach((signal, index) => {
@@ -1674,22 +1748,22 @@ function renderKLineChart(data, period = 'daily') {
 
         // AMA (对应: jigou_caopan)
         if (isSkillVisible('jigou_caopan')) {
-             series.push({
+            series.push({
                 name: 'AMA',
                 type: 'line',
                 data: data.indicators ? data.indicators.ama : [],
                 smooth: true,
-                lineStyle: { 
+                lineStyle: {
                     width: 2,
                     color: {
                         type: 'linear',
                         x: 0, y: 0, x2: 1, y2: 0,
-                        colorStops: data.indicators && data.indicators.ama_color ? 
+                        colorStops: data.indicators && data.indicators.ama_color ?
                             data.indicators.ama_color.map((c, i, arr) => ({
-                                offset: i / (arr.length - 1), 
+                                offset: i / (arr.length - 1),
                                 color: c === 1 ? '#ef4444' : '#22c55e'
-                            })) 
-                            : [{offset: 0, color: '#ef4444'}] 
+                            }))
+                            : [{ offset: 0, color: '#ef4444' }]
                     }
                 }
             });
@@ -1769,14 +1843,14 @@ function renderKLineChart(data, period = 'daily') {
             },
             axisPointer: { link: { xAxisIndex: 'all' } },
             xAxis: [
-                { 
-                    type: 'category', 
+                {
+                    type: 'category',
                     data: data.dates,
                     axisLine: { lineStyle: { color: '#475569' } },
                     axisLabel: { show: false } // Hide label on top chart
                 },
-                { 
-                    type: 'category', 
+                {
+                    type: 'category',
                     gridIndex: 1,
                     data: data.dates,
                     axisLine: { lineStyle: { color: '#475569' } },
@@ -1784,14 +1858,14 @@ function renderKLineChart(data, period = 'daily') {
                 }
             ],
             yAxis: [
-                { 
-                    scale: true, 
+                {
+                    scale: true,
                     splitLine: { lineStyle: { color: '#1e293b' } },
                     axisLabel: { color: '#94a3b8' }
                 },
-                { 
-                    gridIndex: 1, 
-                    scale: true, 
+                {
+                    gridIndex: 1,
+                    scale: true,
                     splitLine: { show: false },
                     axisLabel: { show: false }
                 }
@@ -1802,11 +1876,11 @@ function renderKLineChart(data, period = 'daily') {
             ],
             series: series
         };
-        
+
         // Use notMerge: true to ensure hidden series are removed
         klineChart.setOption(option, true);
         klineChart.hideLoading();
-    } catch(e) {
+    } catch (e) {
         console.error("K-Line Render Failed", e);
     }
 }
@@ -1814,14 +1888,14 @@ function renderKLineChart(data, period = 'daily') {
 window.renderKLineChart = renderKLineChart;
 
 async function fetchKLineData(period = 'daily') {
-    if(!klineChart) return;
+    if (!klineChart) return;
 
     // Show Loading
     klineChart.showLoading({ color: '#38bdf8', maskColor: 'rgba(15, 23, 42, 0.2)' });
 
     try {
         const stockCode = window.currentStockCode || '600519'; // Default to Moutai
-        
+
         const resp = await fetch(`/api/market/kline?code=${stockCode}&period=${period}`);
         const data = await resp.json().catch(() => ({}));
         if (resp.status === 401 && typeof showAuthModal === 'function') { showAuthModal(); klineChart.hideLoading(); return; }
@@ -1845,17 +1919,17 @@ async function fetchKLineData(period = 'daily') {
         // Cache full data for toggling skills without re-fetching
         window._cachedKLineData = data;
         _lastKlineData = { dates: data.dates || [], ohlc: data.ohlc || [], volumes: (data.volumes || []).map(Number) };
-        
+
         renderKLineChart(data, period);
 
         // Highlight active button
         document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
         const activeBtn = document.querySelector(`[data-period="${period}"]`);
-        if(activeBtn) activeBtn.classList.add('active');
+        if (activeBtn) activeBtn.classList.add('active');
 
         updateIndicatorChart(window.currentStockCode || '600519');
 
-    } catch(e) {
+    } catch (e) {
         console.error("K-Line Fetch Failed", e);
         if (typeof showToast === 'function') showToast('K线加载失败，请稍后重试');
         if (klineChart) {
@@ -1872,3 +1946,46 @@ async function fetchKLineData(period = 'daily') {
         }
     }
 }
+
+// Heatmap Modal Logic
+window.openHeatmapModal = function () {
+    const modal = document.getElementById('heatmap-modal');
+    const frame = document.getElementById('heatmap-frame');
+    const content = document.getElementById('heatmap-content');
+
+    if (modal && frame) {
+        modal.classList.remove('hidden');
+        // Small delay to allow display:block to apply before transition
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        });
+
+        if (!frame.src || frame.src === 'about:blank') {
+            document.getElementById('heatmap-loading').style.display = 'flex';
+            frame.src = '/map';
+        }
+    }
+}
+
+window.closeHeatmapModal = function () {
+    const modal = document.getElementById('heatmap-modal');
+    const content = document.getElementById('heatmap-content');
+
+    if (modal) {
+        modal.classList.add('opacity-0');
+        content.classList.add('scale-95');
+
+        // Wait for transition to finish
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+}
+
+// Close modal on outside click
+document.getElementById('heatmap-modal')?.addEventListener('click', function (e) {
+    if (e.target === this) {
+        closeHeatmapModal();
+    }
+});

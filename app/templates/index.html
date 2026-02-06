@@ -263,82 +263,121 @@
 
     <!-- TOP TOOLBAR -->
     <header
-        class="h-10 bg-slate-900/50 backdrop-blur-md border-b border-trade flex items-center justify-between px-3 shrink-0 select-none z-20">
-        <div class="flex items-center gap-6">
-            <div class="flex items-center gap-2">
-                <div class="flex items-center gap-2 text-trade-highlight font-bold text-lg tracking-tight">
+        class="h-11 bg-slate-900/50 backdrop-blur-md border-b border-trade flex items-center justify-between px-4 shrink-0 select-none z-20">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div
+                    class="flex items-center gap-1.5 text-trade-highlight font-bold text-base tracking-tight whitespace-nowrap">
                     <i class="fas fa-layer-group text-sky-500"></i>
                     <span class="bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">ROX
                         3.0</span>
                 </div>
                 <a href="/"
-                    class="ml-6 px-5 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2 border border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] transform hover:scale-105"
+                    class="ml-3 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded text-xs font-medium transition-all flex items-center gap-1.5 border border-slate-700 whitespace-nowrap"
                     title="返回看板">
-                    <i class="fas fa-home text-lg"></i> 返回 1.0 首页
+                    <i class="fas fa-home"></i> 首页
                 </a>
             </div>
 
             <!-- Desktop Nav -->
-            <nav class="hidden md:flex items-center gap-1 text-xs font-medium text-slate-400">
-                <a href="/map" target="_blank"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-emerald-400 transition-all flex items-center gap-2">
-                    <i class="fas fa-th-large"></i> 市场热力
+            <nav class="hidden lg:flex items-center gap-0.5 text-xs font-medium text-slate-400">
+                <a href="javascript:void(0)" onclick="openHeatmapModal()"
+                    class="px-2.5 py-1 rounded hover:bg-white/5 hover:text-emerald-400 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-th-large"></i> 热力图
                 </a>
                 <button onclick="toggleAIAgent()"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-purple-400 transition-all flex items-center gap-2">
+                    class="px-2.5 py-1 rounded hover:bg-white/5 hover:text-purple-400 transition-all flex items-center gap-1.5 whitespace-nowrap">
                     <i class="fas fa-robot"></i> AI投研
                 </button>
                 <button onclick="runAIBacktest()"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-sky-400 transition-all flex items-center gap-2">
-                    <i class="fas fa-chart-line"></i> 策略工场
+                    class="px-2.5 py-1 rounded hover:bg-white/5 hover:text-sky-400 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-chart-line"></i> 策略
                 </button>
                 <button onclick="openProfessionalWindow()"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-indigo-400 transition-all flex items-center gap-2">
-                    <i class="fas fa-microscope"></i> 深度分析
+                    class="px-2.5 py-1 rounded hover:bg-white/5 hover:text-indigo-400 transition-all flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-microscope"></i> 分析
                 </button>
-                <div class="h-4 w-[1px] bg-slate-700 mx-1"></div>
+                <!-- 多智能体分析 -->
+                <button onclick="openMultiAgentAnalysis()"
+                    class="px-2.5 py-1 rounded hover:bg-white/5 hover:text-fuchsia-400 transition-all flex items-center gap-1.5 whitespace-nowrap"
+                    title="多智能体分析">
+                    <i class="fas fa-users-cog"></i> 智能体
+                </button>
+                <div class="h-4 w-[1px] bg-slate-700 mx-0.5"></div>
+                <!-- 模拟交易 -->
+                <button onclick="openPortfolioModal()"
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-rose-400 transition-all flex items-center gap-1 whitespace-nowrap"
+                    title="模拟交易">
+                    <i class="fas fa-wallet"></i> 持仓
+                </button>
+                <!-- 风控中心 -->
+                <button onclick="openRiskDashboard()"
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-amber-400 transition-all flex items-center gap-1 whitespace-nowrap"
+                    title="风控中心">
+                    <i class="fas fa-shield-alt"></i> 风控
+                </button>
+                <!-- 信号交易 -->
+                <button onclick="openAutoTradePanel()"
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-cyan-400 transition-all flex items-center gap-1 whitespace-nowrap"
+                    title="信号交易">
+                    <i class="fas fa-bolt"></i> 信号
+                </button>
+                <div class="h-4 w-[1px] bg-slate-700 mx-0.5"></div>
+                <!-- 仅图标按钮组 -->
+                <button onclick="openReplayChart()"
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-pink-400 transition-all" title="复盘回放">
+                    <i class="fas fa-history"></i>
+                </button>
+                <button onclick="openConditionOrders()"
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-lime-400 transition-all" title="条件单">
+                    <i class="fas fa-tasks"></i>
+                </button>
+                <button onclick="openTdxFormula()"
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-violet-400 transition-all" title="TDX公式">
+                    <i class="fas fa-calculator"></i>
+                </button>
                 <button onclick="openPythonSandbox()"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-green-400 transition-all" title="Python沙箱">
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-green-400 transition-all" title="Python沙箱">
                     <i class="fas fa-code"></i>
                 </button>
                 <button onclick="openNewsCenter()"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-blue-400 transition-all" title="消息">
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-blue-400 transition-all" title="消息">
                     <i class="fas fa-bell"></i>
                 </button>
                 <button onclick="openAlerts()"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-orange-400 transition-all" title="预警">
-                    <i class="fas fa-bolt"></i>
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-orange-400 transition-all" title="预警">
+                    <i class="fas fa-exclamation-triangle"></i>
                 </button>
                 <button onclick="openContradictions()"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-yellow-400 transition-all" title="矛盾扫描">
+                    class="px-2 py-1 rounded hover:bg-white/5 hover:text-yellow-400 transition-all" title="矛盾扫描">
                     <i class="fas fa-search"></i>
                 </button>
-                <button id="settings-btn"
-                    class="px-3 py-1.5 rounded hover:bg-white/5 hover:text-slate-200 transition-all" title="设置">
+                <button id="settings-btn" class="px-2 py-1 rounded hover:bg-white/5 hover:text-slate-200 transition-all"
+                    title="设置">
                     <i class="fas fa-cog"></i>
                 </button>
             </nav>
         </div>
 
         <!-- Market Indices (Dynamic) -->
-        <div id="header-indices" class="hidden md:flex items-center gap-6 text-xs font-mono">
-            <div class="index-item flex items-center gap-2 px-2 py-1 rounded hover:bg-white/5 cursor-default"
+        <div id="header-indices" class="hidden lg:flex items-center gap-3 text-xs font-mono whitespace-nowrap">
+            <div class="index-item flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-white/5 cursor-default"
                 data-index="sh">
-                <span class="text-slate-500 font-sans scale-90">上证</span>
-                <span class="index-price text-slate-400 font-bold skeleton-text">----</span>
-                <span class="index-pct text-slate-500 bg-slate-800 px-1 rounded text-[10px]">--%</span>
+                <span class="text-slate-500 font-sans text-[11px]">沪指</span>
+                <span class="index-price text-slate-300 font-medium">----</span>
+                <span class="index-pct text-slate-500 bg-slate-800 px-1 rounded text-[10px]">--</span>
             </div>
-            <div class="index-item flex items-center gap-2 px-2 py-1 rounded hover:bg-white/5 cursor-default"
+            <div class="index-item flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-white/5 cursor-default"
                 data-index="sz">
-                <span class="text-slate-500 font-sans scale-90">深证</span>
-                <span class="index-price text-slate-400 font-bold skeleton-text">----</span>
-                <span class="index-pct text-slate-500 bg-slate-800 px-1 rounded text-[10px]">--%</span>
+                <span class="text-slate-500 font-sans text-[11px]">深指</span>
+                <span class="index-price text-slate-300 font-medium">----</span>
+                <span class="index-pct text-slate-500 bg-slate-800 px-1 rounded text-[10px]">--</span>
             </div>
-            <div class="index-item flex items-center gap-2 px-2 py-1 rounded hover:bg-white/5 cursor-default"
+            <div class="index-item flex items-center gap-1.5 px-2 py-0.5 rounded hover:bg-white/5 cursor-default"
                 data-index="cyb">
-                <span class="text-slate-500 font-sans scale-90">创业</span>
-                <span class="index-price text-slate-400 font-bold skeleton-text">----</span>
-                <span class="index-pct text-slate-500 bg-slate-800 px-1 rounded text-[10px]">--%</span>
+                <span class="text-slate-500 font-sans text-[11px]">创业</span>
+                <span class="index-price text-slate-300 font-medium">----</span>
+                <span class="index-pct text-slate-500 bg-slate-800 px-1 rounded text-[10px]">--</span>
             </div>
         </div>
 
@@ -377,12 +416,13 @@
         <!-- LEFT PANE: 自选股 | 涨跌排行 -->
         <aside class="flex flex-col border-r border-trade bg-slate-850/50 h-full overflow-hidden">
             <!-- Tabs -->
-            <div class="flex px-2 pt-2 bg-slate-900 border-b border-trade gap-2 overflow-x-auto scrollbar-hide">
-                <div class="tab-btn active" data-tab="rankings">涨跌排行</div>
-                <div class="tab-btn" data-tab="zixuan">自选股</div>
-                <div class="tab-btn" data-tab="sector">板块</div>
-                <div class="tab-btn" data-tab="spot">沪深A股</div>
-                <div class="tab-btn" data-tab="skills" title="技能指标">技能</div>
+            <div
+                class="flex px-1 pt-1.5 pb-1 bg-slate-900 border-b border-trade gap-0.5 overflow-x-auto scrollbar-hide">
+                <div class="tab-btn active whitespace-nowrap" data-tab="rankings">排行</div>
+                <div class="tab-btn whitespace-nowrap" data-tab="zixuan">自选</div>
+                <div class="tab-btn whitespace-nowrap" data-tab="sector">板块</div>
+                <div class="tab-btn whitespace-nowrap" data-tab="spot">A股</div>
+                <div class="tab-btn whitespace-nowrap" data-tab="skills" title="技能指标">技能</div>
             </div>
 
             <!-- Table Header (仅涨跌排行显示) -->
@@ -439,8 +479,13 @@
                 <div class="flex items-center gap-4">
                     <div>
                         <h1 id="stock-name-header" class="text-xl font-bold text-slate-100 tracking-wide">贵州茅台</h1>
+                        <button id="add-to-watchlist-btn"
+                            class="ml-2 text-slate-600 hover:text-yellow-400 transition-colors focus:outline-none"
+                            title="加入/移除自选">
+                            <i class="far fa-star text-lg"></i>
+                        </button>
                         <span id="stock-code-header"
-                            class="text-xs font-mono text-slate-500 bg-slate-800 px-1 rounded">600519</span>
+                            class="text-xs font-mono text-slate-500 bg-slate-800 px-1 rounded ml-2">600519</span>
                     </div>
                     <div class="flex flex-col items-start pl-4 border-l border-trade h-8 justify-center">
                         <span class="text-2xl font-mono font-bold text-up price-font">1750.00</span>
@@ -786,6 +831,406 @@
         </div>
     </div>
 
+    <!-- 模拟交易/持仓 Modal -->
+    <div id="portfolio-modal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4"
+        onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-slate-900 w-full max-w-4xl rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[85vh]"
+            onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <span class="font-bold text-rose-400 flex items-center gap-2"><i class="fas fa-wallet"></i> 模拟交易</span>
+                <button type="button" onclick="document.getElementById('portfolio-modal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <!-- Tabs -->
+            <div class="flex gap-2 px-4 pt-3 border-b border-slate-800">
+                <button class="portfolio-tab-btn px-4 py-2 text-sm font-medium text-sky-400 border-b-2 border-sky-400"
+                    data-tab="positions">持仓</button>
+                <button class="portfolio-tab-btn px-4 py-2 text-sm font-medium text-slate-400 hover:text-white"
+                    data-tab="orders">下单</button>
+                <button class="portfolio-tab-btn px-4 py-2 text-sm font-medium text-slate-400 hover:text-white"
+                    data-tab="history">历史</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4">
+                <!-- Positions Tab -->
+                <div id="portfolio-positions" class="portfolio-tab-content">
+                    <div class="text-slate-400 text-sm text-center py-8" id="portfolio-positions-content">
+                        <i class="fas fa-circle-notch fa-spin text-sky-500 mr-2"></i> 加载持仓中...
+                    </div>
+                </div>
+                <!-- Orders Tab -->
+                <div id="portfolio-orders" class="portfolio-tab-content hidden">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">股票代码</label>
+                                <input id="order-stock-code" type="text" placeholder="600519"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">交易方向</label>
+                                <select id="order-direction"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                                    <option value="buy">买入</option>
+                                    <option value="sell">卖出</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">数量 (手)</label>
+                                <input id="order-quantity" type="number" min="1" value="1"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">价格</label>
+                                <input id="order-price" type="number" step="0.01" placeholder="市价留空"
+                                    class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                            </div>
+                            <button onclick="submitOrder()"
+                                class="w-full bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold py-2 rounded-lg mt-2">
+                                <i class="fas fa-paper-plane mr-2"></i>提交订单
+                            </button>
+                        </div>
+                        <div class="bg-slate-800/50 rounded-lg p-4 text-xs text-slate-400">
+                            <p class="font-bold mb-2 text-slate-300">交易说明</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>模拟交易不涉及真实资金</li>
+                                <li>价格留空则使用最新价格</li>
+                                <li>手数 = 100股</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- History Tab -->
+                <div id="portfolio-history" class="portfolio-tab-content hidden">
+                    <div class="text-slate-400 text-sm text-center py-8" id="portfolio-history-content">
+                        <i class="fas fa-circle-notch fa-spin text-sky-500 mr-2"></i> 加载历史...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 风控中心 Modal -->
+    <div id="risk-dashboard-modal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4"
+        onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-slate-900 w-full max-w-3xl rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[85vh]"
+            onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <span class="font-bold text-amber-400 flex items-center gap-2"><i class="fas fa-shield-alt"></i>
+                    风控中心</span>
+                <button type="button" onclick="document.getElementById('risk-dashboard-modal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4" id="risk-dashboard-content">
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-800 rounded-lg p-4 text-center border border-slate-700">
+                        <p class="text-xs text-slate-500 uppercase mb-1">日 VaR (95%)</p>
+                        <p class="text-2xl font-bold text-amber-400 font-mono" id="risk-var">--%</p>
+                    </div>
+                    <div class="bg-slate-800 rounded-lg p-4 text-center border border-slate-700">
+                        <p class="text-xs text-slate-500 uppercase mb-1">最大回撤</p>
+                        <p class="text-2xl font-bold text-rose-400 font-mono" id="risk-max-dd">--%</p>
+                    </div>
+                    <div class="bg-slate-800 rounded-lg p-4 text-center border border-slate-700">
+                        <p class="text-xs text-slate-500 uppercase mb-1">夏普比率</p>
+                        <p class="text-2xl font-bold text-emerald-400 font-mono" id="risk-sharpe">--</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-sm font-bold text-slate-300 mb-2">行业暴露</p>
+                        <div id="risk-sector-exposure"
+                            class="bg-slate-800 rounded-lg p-4 min-h-[100px] text-slate-500 text-xs text-center">加载中...
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-300 mb-2">持仓集中度</p>
+                        <div id="risk-concentration"
+                            class="bg-slate-800 rounded-lg p-4 min-h-[100px] text-slate-500 text-xs text-center">加载中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 信号交易 Modal -->
+    <div id="auto-trade-modal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4"
+        onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-slate-900 w-full max-w-md rounded-xl border border-slate-700 shadow-2xl"
+            onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <span class="font-bold text-cyan-400 flex items-center gap-2"><i class="fas fa-bolt"></i> 信号交易</span>
+                <button type="button" onclick="document.getElementById('auto-trade-modal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 space-y-4">
+                <div class="bg-cyan-900/20 border border-cyan-500/30 rounded-lg p-3 text-xs text-cyan-300">
+                    <i class="fas fa-info-circle mr-1"></i> 根据 SignalFusion 当前信号自动执行交易
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">交易金额 (元)</label>
+                    <input id="auto-trade-amount" type="number" min="1000" step="1000" value="10000"
+                        class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">信号阈值</label>
+                    <select id="auto-trade-threshold"
+                        class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                        <option value="70">强烈信号 (≥70)</option>
+                        <option value="50" selected>中等信号 (≥50)</option>
+                        <option value="30">弱信号 (≥30)</option>
+                    </select>
+                </div>
+                <button onclick="executeAutoTrade()"
+                    class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-2.5 rounded-lg">
+                    <i class="fas fa-play mr-2"></i>执行信号交易
+                </button>
+                <div id="auto-trade-result" class="text-xs text-slate-400 min-h-[20px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 复盘回放 Modal -->
+    <div id="replay-modal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4"
+        onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-slate-900 w-full max-w-4xl rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[85vh]"
+            onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <span class="font-bold text-pink-400 flex items-center gap-2"><i class="fas fa-history"></i> 复盘回放</span>
+                <button type="button" onclick="document.getElementById('replay-modal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 flex gap-4">
+                <div class="w-48 space-y-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">股票代码</label>
+                        <input id="replay-stock-code" type="text" placeholder="600519"
+                            class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                    </div>
+                    <button onclick="loadReplayChart()"
+                        class="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2 rounded-lg text-sm">
+                        <i class="fas fa-sync mr-1"></i>加载回放
+                    </button>
+                </div>
+                <div class="flex-1 bg-slate-800 rounded-lg min-h-[400px]" id="replay-chart-container">
+                    <div class="flex items-center justify-center h-full text-slate-500 text-sm">
+                        <span>输入代码后点击加载</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 条件单 Modal -->
+    <div id="condition-orders-modal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4"
+        onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-slate-900 w-full max-w-3xl rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[85vh]"
+            onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <span class="font-bold text-lime-400 flex items-center gap-2"><i class="fas fa-tasks"></i> 条件单</span>
+                <button type="button"
+                    onclick="document.getElementById('condition-orders-modal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4">
+                <!-- Create Condition Order -->
+                <div class="bg-slate-800/50 rounded-lg p-4 mb-4">
+                    <p class="text-sm font-bold text-slate-300 mb-3">新建条件单</p>
+                    <div class="grid grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">股票代码</label>
+                            <input id="cond-stock-code" type="text" placeholder="600519"
+                                class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">触发条件</label>
+                            <select id="cond-trigger-type"
+                                class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm">
+                                <option value="price_above">价格高于</option>
+                                <option value="price_below">价格低于</option>
+                                <option value="pct_above">涨幅超过</option>
+                                <option value="pct_below">跌幅超过</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">触发值</label>
+                            <input id="cond-trigger-value" type="number" step="0.01" placeholder="100.00"
+                                class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">动作</label>
+                            <select id="cond-action"
+                                class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-sm">
+                                <option value="buy">买入</option>
+                                <option value="sell">卖出</option>
+                                <option value="alert">仅提醒</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="createConditionOrder()"
+                        class="mt-3 bg-lime-600 hover:bg-lime-500 text-white font-bold py-2 px-6 rounded-lg text-sm">
+                        <i class="fas fa-plus mr-1"></i>创建条件单
+                    </button>
+                </div>
+                <!-- List -->
+                <p class="text-sm font-bold text-slate-300 mb-2">已有条件单</p>
+                <div id="condition-orders-list" class="space-y-2 max-h-[300px] overflow-y-auto text-slate-400 text-sm">
+                    <div class="text-center py-4"><i class="fas fa-circle-notch fa-spin text-lime-400 mr-2"></i>加载中...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 多智能体分析 Modal -->
+    <div id="multi-agent-modal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4"
+        onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-slate-900 w-full max-w-3xl rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[90vh]"
+            onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <span class="font-bold text-fuchsia-400 flex items-center gap-2"><i class="fas fa-users-cog"></i>
+                    多智能体分析</span>
+                <button type="button" onclick="document.getElementById('multi-agent-modal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Score Summary -->
+                <div id="multi-agent-summary"
+                    class="bg-gradient-to-r from-fuchsia-900/30 to-purple-900/30 border border-fuchsia-500/30 rounded-xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400">点击「开始分析」使用 5 个 AI 智能体进行综合评估</p>
+                            <p class="text-2xl font-bold text-white mt-1" id="multi-agent-stock-name">等待分析</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-4xl font-bold text-fuchsia-400" id="multi-agent-score">--</p>
+                            <p class="text-xs text-slate-400" id="multi-agent-signal">综合评分</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action -->
+                <div class="flex items-center gap-2">
+                    <button onclick="runMultiAgentAnalysis()"
+                        class="flex-1 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-bold py-2.5 rounded-lg">
+                        <i class="fas fa-play mr-2"></i>开始分析
+                    </button>
+                    <span id="multi-agent-loading" class="text-fuchsia-400 hidden"><i
+                            class="fas fa-circle-notch fa-spin"></i></span>
+                </div>
+                <!-- Agent Results Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="multi-agent-results">
+                    <!-- Technical -->
+                    <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">📈</span> <span class="font-bold text-sm">技术分析师</span>
+                            <span class="ml-auto text-xs px-2 py-0.5 rounded bg-slate-700"
+                                id="agent-technical-score">--</span>
+                        </div>
+                        <p class="text-xs text-slate-400" id="agent-technical-summary">等待分析...</p>
+                    </div>
+                    <!-- Market -->
+                    <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">🌍</span> <span class="font-bold text-sm">市场分析师</span>
+                            <span class="ml-auto text-xs px-2 py-0.5 rounded bg-slate-700"
+                                id="agent-market-score">--</span>
+                        </div>
+                        <p class="text-xs text-slate-400" id="agent-market-summary">等待分析...</p>
+                    </div>
+                    <!-- Fundamental -->
+                    <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">💰</span> <span class="font-bold text-sm">基本面分析师</span>
+                            <span class="ml-auto text-xs px-2 py-0.5 rounded bg-slate-700"
+                                id="agent-fundamental-score">--</span>
+                        </div>
+                        <p class="text-xs text-slate-400" id="agent-fundamental-summary">等待分析...</p>
+                    </div>
+                    <!-- News -->
+                    <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">📰</span> <span class="font-bold text-sm">新闻分析师</span>
+                            <span class="ml-auto text-xs px-2 py-0.5 rounded bg-slate-700"
+                                id="agent-news-score">--</span>
+                        </div>
+                        <p class="text-xs text-slate-400" id="agent-news-summary">等待分析...</p>
+                    </div>
+                    <!-- Risk -->
+                    <div class="bg-slate-800/50 rounded-lg p-3 border border-slate-700 md:col-span-2">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">🛡️</span> <span class="font-bold text-sm">风控分析师</span>
+                            <span class="ml-auto text-xs px-2 py-0.5 rounded bg-slate-700"
+                                id="agent-risk-score">--</span>
+                        </div>
+                        <p class="text-xs text-slate-400" id="agent-risk-summary">等待分析...</p>
+                    </div>
+                </div>
+                <!-- Action Recommendation -->
+                <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                    <p class="font-bold text-sm text-slate-300 mb-2"><i
+                            class="fas fa-lightbulb text-amber-400 mr-2"></i>操作建议</p>
+                    <p class="text-sm text-slate-400" id="multi-agent-action">完成分析后将显示综合操作建议</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TDX公式 Modal -->
+    <div id="tdx-formula-modal"
+        class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4"
+        onclick="if(event.target===this) this.classList.add('hidden')">
+        <div class="bg-slate-900 w-full max-w-2xl rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[85vh]"
+            onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center p-4 border-b border-slate-700">
+                <span class="font-bold text-violet-400 flex items-center gap-2"><i class="fas fa-calculator"></i> TDX
+                    公式计算器</span>
+                <button type="button" onclick="document.getElementById('tdx-formula-modal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">股票代码</label>
+                        <input id="tdx-stock-code" type="text" placeholder="600519"
+                            class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">周期</label>
+                        <select id="tdx-period"
+                            class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm">
+                            <option value="daily">日线</option>
+                            <option value="weekly">周线</option>
+                            <option value="monthly">月线</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">TDX 公式</label>
+                    <textarea id="tdx-formula" rows="5"
+                        placeholder="MA5:=MA(CLOSE,5);&#10;MA10:=MA(CLOSE,10);&#10;CROSS(MA5,MA10);"
+                        class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm font-mono"></textarea>
+                </div>
+                <button onclick="calculateTdxFormula()"
+                    class="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-bold py-2.5 rounded-lg">
+                    <i class="fas fa-play mr-2"></i>计算
+                </button>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">计算结果</label>
+                    <div id="tdx-result"
+                        class="bg-slate-800 rounded-lg p-4 min-h-[100px] text-xs font-mono text-slate-300 whitespace-pre-wrap overflow-auto max-h-[200px]">
+                        结果将在这里显示...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 消息中心 -->
     <div id="news-center-modal"
         class="fixed top-[10%] right-[5%] w-[400px] max-h-[70vh] bg-slate-900 border border-slate-700 shadow-2xl z-50 flex flex-col rounded-xl overflow-hidden hidden ring-1 ring-white/5">
@@ -1049,6 +1494,40 @@ def strategy(df):
             new ResizeObserver(() => window.largeChartInstance.resize()).observe(container);
         }
     </script>
+    <!-- Heatmap Modal -->
+    <div id="heatmap-modal"
+        class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-[95vw] h-[90vh] flex flex-col transform scale-95 transition-transform duration-300"
+            id="heatmap-content">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50">
+                <h3 class="text-lg font-medium text-white flex items-center gap-2">
+                    <i class="fas fa-th-large text-emerald-500"></i>
+                    全市场热力图
+                </h3>
+                <div class="flex items-center gap-4">
+                    <button onclick="document.getElementById('heatmap-frame').contentWindow.location.reload()"
+                        class="text-slate-400 hover:text-white transition-colors" title="刷新">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button onclick="closeHeatmapModal()" class="text-slate-400 hover:text-white transition-colors"
+                        title="关闭">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Content -->
+            <div class="flex-1 w-full h-full bg-slate-900 relative rounded-b-xl overflow-hidden">
+                <!-- Loading State -->
+                <div id="heatmap-loading"
+                    class="absolute inset-0 flex items-center justify-center z-10 text-slate-400 bg-slate-900">
+                    <i class="fas fa-circle-notch fa-spin text-2xl mr-2"></i> 加载中...
+                </div>
+                <iframe id="heatmap-frame" class="w-full h-full border-0"
+                    onload="document.getElementById('heatmap-loading').style.display='none'"></iframe>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

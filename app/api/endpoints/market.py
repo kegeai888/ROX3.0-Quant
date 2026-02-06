@@ -1302,6 +1302,11 @@ async def _fetch_single_stock_by_code(code6: str) -> dict:
             logger.debug(f"Single-stock info_em failed {code6}: {e}")
             return (code6, "--", "--")
 
+    # 强制禁用代理
+    import os
+    os.environ['NO_PROXY'] = '*'
+    os.environ['no_proxy'] = '*'
+
     name, pe_str, mv_str = await loop.run_in_executor(None, _get_info)
 
     p_now = None
@@ -1343,6 +1348,11 @@ async def _fetch_single_stock_by_code(code6: str) -> dict:
 @router.post("/fetch-realtime")
 async def api_fetch_realtime(req: StockRequest):
     try:
+        import os
+        # 强制禁用代理
+        os.environ['NO_PROXY'] = '*'
+        os.environ['no_proxy'] = '*'
+
         raw = (req.stock_name or "").strip()
         if not raw:
             return JSONResponse({"error": "请输入股票代码或名称"}, status_code=400)

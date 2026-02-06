@@ -1947,39 +1947,45 @@ async function fetchKLineData(period = 'daily') {
     }
 }
 
-// Heatmap Modal Logic
-window.openHeatmapModal = function () {
-    const modal = document.getElementById('heatmap-modal');
-    const frame = document.getElementById('heatmap-frame');
-    const content = document.getElementById('heatmap-content');
+// Heatmap Modal Logic - only define if not already set by inline script
+if (typeof window.openHeatmapModal !== 'function') {
+    window.openHeatmapModal = function () {
+        const modal = document.getElementById('heatmap-modal');
+        const frame = document.getElementById('heatmap-frame');
+        const content = document.getElementById('heatmap-content');
 
-    if (modal && frame) {
-        modal.classList.remove('hidden');
-        // Small delay to allow display:block to apply before transition
-        requestAnimationFrame(() => {
-            modal.classList.remove('opacity-0');
-            content.classList.remove('scale-95');
-        });
+        if (modal && frame) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';  // Required: override inline style="display:none"
+            // Small delay to allow display:flex to apply before transition
+            requestAnimationFrame(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            });
 
-        if (!frame.src || frame.src === 'about:blank') {
-            document.getElementById('heatmap-loading').style.display = 'flex';
-            frame.src = '/map';
+            if (!frame.src || frame.src === 'about:blank') {
+                document.getElementById('heatmap-loading').style.display = 'flex';
+                frame.src = '/map';
+            }
         }
     }
 }
 
-window.closeHeatmapModal = function () {
-    const modal = document.getElementById('heatmap-modal');
-    const content = document.getElementById('heatmap-content');
+if (typeof window.closeHeatmapModal !== 'function') {
+    window.closeHeatmapModal = function () {
+        const modal = document.getElementById('heatmap-modal');
+        const content = document.getElementById('heatmap-content');
 
-    if (modal) {
-        modal.classList.add('opacity-0');
-        content.classList.add('scale-95');
+        if (modal) {
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
 
-        // Wait for transition to finish
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
+            // Wait for transition to finish
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';  // Reset to hidden
+            }, 300);
+        }
     }
 }
 

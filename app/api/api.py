@@ -58,6 +58,14 @@ api_group.include_router(portfolio.router, prefix="/portfolio", tags=["portfolio
 from app.api.endpoints import agents
 api_group.include_router(agents.router, tags=["agents"])
 
+# 数据导出 (新添加)
+from app.api.endpoints import export
+api_group.include_router(export.router, tags=["export"])
+
+# 价格预警 (新添加)
+from app.api.endpoints import alerts
+api_group.include_router(alerts.router, tags=["alerts"])
+
 # 将API组添加到主路由
 api_router.include_router(api_group)
 

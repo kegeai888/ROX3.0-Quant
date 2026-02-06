@@ -21,7 +21,7 @@
         .then(function (data) {
           if (data.access_token) localStorage.setItem('access_token', data.access_token);
         })
-        .catch(function () {});
+        .catch(function () { });
     } catch (e) {
       return Promise.resolve();
     }
@@ -113,11 +113,11 @@
   function loadMarketFenshiChart() {
     var el = document.getElementById('market-fenshi-chart');
     if (!el || typeof echarts === 'undefined') return;
-    
+
     // Add click event to enlarge
     el.style.cursor = 'pointer';
-    el.onclick = function() {
-       openLargeChartModal(MARKET_INDEX_CODE, 'fenshi');
+    el.onclick = function () {
+      openLargeChartModal(MARKET_INDEX_CODE, 'fenshi');
     };
 
     apiGet('/api/market/fenshi?code=' + MARKET_INDEX_CODE)
@@ -161,7 +161,7 @@
         });
         ch.resize();
       })
-      .catch(function () {});
+      .catch(function () { });
   }
 
   function loadMarketKlineChart(period) {
@@ -413,14 +413,14 @@
         if (predLogic) predLogic.textContent = data.logic || '--';
         if (predSupport) predSupport.textContent = data.support || '--';
         if (predPressure) predPressure.textContent = data.pressure || '--';
-        
+
         // Add click to enlarge
         if (predChartWrap) {
-            predChartWrap.onclick = function() {
-                openLargeChartModal('market_prediction', 'prediction');
-            };
+          predChartWrap.onclick = function () {
+            openLargeChartModal('market_prediction', 'prediction');
+          };
         }
-        
+
         var history = data.history || {};
         var histDates = history.dates || [];
         var histPrices = history.prices || [];
@@ -628,11 +628,11 @@
       if (vol) {
         var v = data.volume_increase;
         if (v != null && v !== '') {
-           // Ensure it has '倍' if it's a number
-           if (!isNaN(v)) vol.textContent = v + '倍';
-           else vol.textContent = v;
+          // Ensure it has '倍' if it's a number
+          if (!isNaN(v)) vol.textContent = v + '倍';
+          else vol.textContent = v;
         } else {
-           vol.textContent = '--';
+          vol.textContent = '--';
         }
       }
     }
@@ -642,21 +642,21 @@
     }
     if (diag) {
       if (resonance) resonance.textContent = diag.overall_score != null ? diag.overall_score + ' 分' : '--';
-      
+
       // Use prediction data if available (New in 3.0)
       if (diag.details && diag.details.prediction) {
-          if (target) target.textContent = FormatUtils.formatPrice(diag.details.prediction.target_price);
-          if (stop) stop.textContent = FormatUtils.formatPrice(diag.details.prediction.stop_loss);
-      } 
+        if (target) target.textContent = FormatUtils.formatPrice(diag.details.prediction.target_price);
+        if (stop) stop.textContent = FormatUtils.formatPrice(diag.details.prediction.stop_loss);
+      }
       // Fallback to technical data
       else if (diag.details && diag.details.technical) {
-          if (target && target.textContent === '--' && diag.details.technical.resistance) target.textContent = FormatUtils.formatPrice(diag.details.technical.resistance);
-          if (stop && stop.textContent === '--' && diag.details.technical.support) stop.textContent = FormatUtils.formatPrice(diag.details.technical.support);
+        if (target && target.textContent === '--' && diag.details.technical.resistance) target.textContent = FormatUtils.formatPrice(diag.details.technical.resistance);
+        if (stop && stop.textContent === '--' && diag.details.technical.support) stop.textContent = FormatUtils.formatPrice(diag.details.technical.support);
       }
 
       // Fill Volume Increase if available in diagnosis details
       if (vol && vol.textContent === '--' && diag.details && diag.details.volume && diag.details.volume.ratio) {
-          vol.textContent = diag.details.volume.ratio + '倍';
+        vol.textContent = diag.details.volume.ratio + '倍';
       }
     }
   }
@@ -726,8 +726,8 @@
         var chipsStr = (data.chips_ratio != null ? FormatUtils.formatPct(data.chips_ratio * 100) : '--');
         var t = '现价: ' + pStr + ' | 量能: ' + vStr + ' | 获利盘: ' + chipsStr;
         if (data.fundamentals) {
-            t += ' | PE ' + (data.fundamentals.pe || '--');
-            t += ' | 市值 ' + (data.fundamentals.mv ? FormatUtils.formatBigNumber(data.fundamentals.mv) : '--');
+          t += ' | PE ' + (data.fundamentals.pe || '--');
+          t += ' | 市值 ' + (data.fundamentals.mv ? FormatUtils.formatBigNumber(data.fundamentals.mv) : '--');
         }
         if (resultEl) { resultEl.textContent = t; resultEl.classList.remove('hidden'); }
         window._lastDiagnosisSymbol = data.code || '';
@@ -771,9 +771,9 @@
                 var flow = details.fund_flow || {};
                 var vol = details.volume || {};
                 var pred = details.prediction || {};
-                
+
                 var html = '<div class="space-y-2">';
-                
+
                 // 1. 综合得分与总结
                 html += '<div class="border-b border-slate-700/50 pb-2 mb-2">';
                 html += '<span class="text-amber-400 font-semibold text-lg">综合得分 ' + score + ' 分</span>';
@@ -786,58 +786,58 @@
 
                 // 2. 预测与操作建议 (目标/止损/T+0)
                 if (pred.target_price || pred.stop_loss || pred.t_plus_zero) {
-                    html += '<div class="bg-slate-700/30 p-2 rounded border border-slate-600/30">';
-                    html += '<h4 class="text-sky-400 text-xs font-bold mb-1">操作建议</h4>';
-                    html += '<div class="grid grid-cols-2 gap-2 text-xs mb-1">';
-                    html += '<div>目标价: <span class="text-red-400 font-mono">' + (pred.target_price ? FormatUtils.formatPrice(pred.target_price) : '--') + '</span></div>';
-                    html += '<div>止损价: <span class="text-green-400 font-mono">' + (pred.stop_loss ? FormatUtils.formatPrice(pred.stop_loss) : '--') + '</span></div>';
+                  html += '<div class="bg-slate-700/30 p-2 rounded border border-slate-600/30">';
+                  html += '<h4 class="text-sky-400 text-xs font-bold mb-1">操作建议</h4>';
+                  html += '<div class="grid grid-cols-2 gap-2 text-xs mb-1">';
+                  html += '<div>目标价: <span class="text-red-400 font-mono">' + (pred.target_price ? FormatUtils.formatPrice(pred.target_price) : '--') + '</span></div>';
+                  html += '<div>止损价: <span class="text-green-400 font-mono">' + (pred.stop_loss ? FormatUtils.formatPrice(pred.stop_loss) : '--') + '</span></div>';
+                  html += '</div>';
+                  if (pred.t_plus_zero) {
+                    html += '<div class="text-xs text-slate-400 mt-1 border-t border-slate-600/30 pt-1">';
+                    html += '<span class="text-amber-500">T+0参考:</span> ';
+                    html += '买入 <span class="font-mono text-slate-200">' + (pred.t_plus_zero.buy || '--') + '</span> / ';
+                    html += '卖出 <span class="font-mono text-slate-200">' + (pred.t_plus_zero.sell || '--') + '</span>';
+                    if (pred.t_plus_zero.note) html += '<div class="text-[10px] text-slate-500 mt-0.5">' + pred.t_plus_zero.note + '</div>';
                     html += '</div>';
-                    if (pred.t_plus_zero) {
-                        html += '<div class="text-xs text-slate-400 mt-1 border-t border-slate-600/30 pt-1">';
-                        html += '<span class="text-amber-500">T+0参考:</span> ';
-                        html += '买入 <span class="font-mono text-slate-200">' + (pred.t_plus_zero.buy || '--') + '</span> / ';
-                        html += '卖出 <span class="font-mono text-slate-200">' + (pred.t_plus_zero.sell || '--') + '</span>';
-                        if (pred.t_plus_zero.note) html += '<div class="text-[10px] text-slate-500 mt-0.5">' + pred.t_plus_zero.note + '</div>';
-                        html += '</div>';
-                    }
-                    html += '</div>';
+                  }
+                  html += '</div>';
                 }
 
                 // 3. 量能分析
                 if (vol.summary) {
-                    html += '<div class="text-xs text-slate-400"><span class="text-sky-400 font-bold">量能:</span> ' + vol.summary + '</div>';
+                  html += '<div class="text-xs text-slate-400"><span class="text-sky-400 font-bold">量能:</span> ' + vol.summary + '</div>';
                 }
 
                 // 4. 资金动向
                 if (flow.summary) {
-                    html += '<div class="text-xs text-slate-400"><span class="text-sky-400 font-bold">资金:</span> ' + flow.summary + '</div>';
+                  html += '<div class="text-xs text-slate-400"><span class="text-sky-400 font-bold">资金:</span> ' + flow.summary + '</div>';
                 }
 
                 // 5. 基本面 & 财务
                 if (fund.summary) {
-                    html += '<div class="text-xs text-slate-400"><span class="text-sky-400 font-bold">基本面:</span> ' + fund.summary + '</div>';
-                    if (fund.metrics) {
-                         var m = fund.metrics;
-                         html += '<div class="flex gap-3 text-[10px] text-slate-500 mt-0.5 font-mono">';
-                         if (m.pe_ratio) html += 'PE: ' + m.pe_ratio.toFixed(1);
-                         if (m.pb_ratio) html += 'PB: ' + m.pb_ratio.toFixed(1);
-                         if (m.roe) html += 'ROE: ' + m.roe.toFixed(1) + '%';
-                         html += '</div>';
-                    }
+                  html += '<div class="text-xs text-slate-400"><span class="text-sky-400 font-bold">基本面:</span> ' + fund.summary + '</div>';
+                  if (fund.metrics) {
+                    var m = fund.metrics;
+                    html += '<div class="flex gap-3 text-[10px] text-slate-500 mt-0.5 font-mono">';
+                    if (m.pe_ratio) html += 'PE: ' + m.pe_ratio.toFixed(1);
+                    if (m.pb_ratio) html += 'PB: ' + m.pb_ratio.toFixed(1);
+                    if (m.roe) html += 'ROE: ' + m.roe.toFixed(1) + '%';
+                    html += '</div>';
+                  }
                 }
 
                 // 6. 相关资讯
                 var newsList = details.news || [];
                 if (newsList.length > 0) {
-                    html += '<div class="mt-2 border-t border-slate-700/50 pt-2">';
-                    html += '<h4 class="text-sky-400 text-xs font-bold mb-1">相关资讯</h4>';
-                    html += '<ul class="space-y-1">';
-                    newsList.slice(0, 3).forEach(function(n) {
-                        var title = (n.title || '').substring(0, 20) + (n.title && n.title.length > 20 ? '...' : '');
-                        var url = n.url || '#';
-                        html += '<li><a href="' + url + '" target="_blank" class="text-[10px] text-slate-400 hover:text-sky-300 flex justify-between"><span>' + title + '</span><span class="text-slate-600">' + (n.time || '').split(' ')[0] + '</span></a></li>';
-                    });
-                    html += '</ul></div>';
+                  html += '<div class="mt-2 border-t border-slate-700/50 pt-2">';
+                  html += '<h4 class="text-sky-400 text-xs font-bold mb-1">相关资讯</h4>';
+                  html += '<ul class="space-y-1">';
+                  newsList.slice(0, 3).forEach(function (n) {
+                    var title = (n.title || '').substring(0, 20) + (n.title && n.title.length > 20 ? '...' : '');
+                    var url = n.url || '#';
+                    html += '<li><a href="' + url + '" target="_blank" class="text-[10px] text-slate-400 hover:text-sky-300 flex justify-between"><span>' + title + '</span><span class="text-slate-600">' + (n.time || '').split(' ')[0] + '</span></a></li>';
+                  });
+                  html += '</ul></div>';
                 }
 
                 html += '</div>'; // End container
@@ -1173,18 +1173,98 @@
     if (mode === 'trading') loadTrading();
     if (mode === 'community') loadCommunityFeed();
     if (mode === 'system') loadSystemStatus();
+    if (mode === 'dragon') loadDragonTigerView();
+  }
+
+  // ---------- 龙虎榜视图 ----------
+  function loadDragonTigerView() {
+    var listEl = document.getElementById('dragon-tiger-list');
+    var rotationEl = document.getElementById('sector-rotation-list');
+
+    // Load Dragon Tiger data
+    if (listEl) {
+      listEl.innerHTML = '<p class="text-slate-400 text-sm">加载中...</p>';
+      fetch('/api/market/dragon-tiger')
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          var items = data.data || [];
+          if (items.length === 0) {
+            listEl.innerHTML = '<p class="text-slate-400 text-sm">暂无龙虎榜数据</p>';
+            return;
+          }
+          listEl.innerHTML = items.slice(0, 20).map(function (item) {
+            var changeCls = item.change_pct >= 0 ? 'text-red-400' : 'text-green-400';
+            var netCls = (item.net_amount || 0) >= 0 ? 'text-red-400' : 'text-green-400';
+            var netDisplay = typeof FormatUtils !== 'undefined' ? FormatUtils.formatBigNumber(item.net_amount || 0) : (item.net_amount || 0);
+            return '<div class="flex items-center justify-between py-2 border-b border-slate-700/50 hover:bg-slate-700/30 cursor-pointer" onclick="if(typeof searchStock===\'function\')searchStock(\'' + item.code + '\')">' +
+              '<div class="flex-1">' +
+              '<span class="text-white text-sm font-medium">' + (item.name || '') + '</span>' +
+              '<span class="text-slate-400 text-xs ml-2">' + (item.code || '') + '</span>' +
+              '</div>' +
+              '<div class="text-right">' +
+              '<span class="' + changeCls + ' text-sm">' + (item.change_pct >= 0 ? '+' : '') + (item.change_pct || 0).toFixed(2) + '%</span>' +
+              '<span class="text-slate-400 text-xs block">' + (item.reason || '') + '</span>' +
+              '<span class="' + netCls + ' text-xs">净买入: ' + netDisplay + '</span>' +
+              '</div>' +
+              '</div>';
+          }).join('');
+        })
+        .catch(function (err) {
+          console.error('龙虎榜加载失败:', err);
+          listEl.innerHTML = '<p class="text-red-400 text-sm">加载失败: ' + err.message + '</p>';
+        });
+    }
+
+    // Load Sector Rotation data
+    if (rotationEl) {
+      rotationEl.innerHTML = '<p class="text-slate-400 text-sm">加载中...</p>';
+      fetch('/api/market/rotation')
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          var items = data.data || [];
+          if (items.length === 0) {
+            rotationEl.innerHTML = '<p class="text-slate-400 text-sm">暂无板块轮动数据</p>';
+            return;
+          }
+          rotationEl.innerHTML = items.map(function (item, idx) {
+            var pctCls = (item.pct_1d || 0) >= 0 ? 'text-red-400' : 'text-green-400';
+            var pct5Cls = (item.pct_5d || 0) >= 0 ? 'text-red-400' : 'text-green-400';
+            var rankCls = idx < 3 ? 'bg-red-500/20 text-red-400' : 'bg-slate-600/20 text-slate-400';
+            return '<div class="flex items-center justify-between py-2 border-b border-slate-700/50">' +
+              '<div class="flex items-center">' +
+              '<span class="w-6 h-6 rounded-full ' + rankCls + ' flex items-center justify-center text-xs mr-2">' + (idx + 1) + '</span>' +
+              '<span class="text-white text-sm">' + (item.name || '') + '</span>' +
+              '</div>' +
+              '<div class="text-right">' +
+              '<span class="' + pctCls + ' text-sm">' + ((item.pct_1d || 0) >= 0 ? '+' : '') + (item.pct_1d || 0).toFixed(2) + '%</span>' +
+              '<span class="' + pct5Cls + ' text-xs block">5日: ' + ((item.pct_5d || 0) >= 0 ? '+' : '') + (item.pct_5d || 0).toFixed(2) + '%</span>' +
+              '</div>' +
+              '</div>';
+          }).join('');
+        })
+        .catch(function (err) {
+          console.error('板块轮动加载失败:', err);
+          rotationEl.innerHTML = '<p class="text-red-400 text-sm">加载失败: ' + err.message + '</p>';
+        });
+    }
   }
 
   // ---------- 通用图表放大 ----------
   function openLargeChartModal(code, type) {
     var modal = document.getElementById('large-chart-modal');
-    
+
     // Auto-create modal if missing
     if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'large-chart-modal';
-        modal.className = 'fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm';
-        modal.innerHTML = `
+      modal = document.createElement('div');
+      modal.id = 'large-chart-modal';
+      modal.className = 'fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm';
+      modal.innerHTML = `
             <div class="relative w-[90vw] h-[80vh] bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col overflow-hidden">
                 <div class="flex items-center justify-between px-4 py-3 bg-slate-800 border-b border-slate-700">
                     <h3 id="large-chart-title" class="text-lg font-bold text-slate-100">图表详情</h3>
@@ -1197,7 +1277,7 @@
                 <div id="large-chart-body" class="flex-1 w-full h-full p-4 relative"></div>
             </div>
         `;
-        document.body.appendChild(modal);
+      document.body.appendChild(modal);
     }
 
     var body = document.getElementById('large-chart-body');
@@ -1207,100 +1287,100 @@
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     body.innerHTML = '<div id="large-chart-canvas" class="w-full h-full"></div>';
-    
+
     if (title) title.textContent = (code === '000001' ? '上证指数' : code) + (type === 'fenshi' ? ' 分时图' : ' 详情');
 
-    setTimeout(function() {
+    setTimeout(function () {
       var el = document.getElementById('large-chart-canvas');
       if (!el || typeof echarts === 'undefined') return;
-      
+
       var ch = echarts.init(el);
       ch.showLoading({ color: '#38bdf8', textColor: '#94a3b8', maskColor: 'rgba(15, 23, 42, 0.6)' });
 
       if (type === 'fenshi') {
         apiGet('/api/market/fenshi?code=' + code)
-          .then(function(r) { return r.ok ? r.json() : {}; })
-          .then(function(d) {
-             ch.hideLoading();
-             var times = d.times || [];
-             var prices = d.prices || [];
-             var volumes = d.volumes || [];
-             if (!times.length) { el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">暂无数据</div>'; return; }
-             
-             ch.setOption({
-                backgroundColor: 'transparent',
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: { type: 'cross' },
-                    backgroundColor: 'rgba(30,41,59,0.95)',
-                    borderColor: '#334155',
-                    textStyle: { color: '#e2e8f0' },
-                    formatter: function (params) {
-                        if (!params || !params.length) return '';
-                        var idx = params[0].dataIndex;
-                        var t = times[idx] || '';
-                        var p = prices[idx] != null ? prices[idx].toFixed(2) : '--';
-                        var v = volumes[idx] != null ? (volumes[idx] >= 10000 ? (volumes[idx] / 10000).toFixed(1) + '万' : volumes[idx]) : '--';
-                        return t + '<br/>价格: ' + p + '<br/>成交量: ' + v;
-                    }
-                },
-                grid: [{ left: 60, right: 60, top: 30, bottom: 80 }, { left: 60, right: 60, top: '85%', height: '10%' }],
-                xAxis: [
-                    { type: 'category', data: times, gridIndex: 0, axisLabel: { color: '#94a3b8' }, boundaryGap: false },
-                    { type: 'category', data: times, gridIndex: 1, axisLabel: { show: false } }
-                ],
-                yAxis: [
-                    { type: 'value', gridIndex: 0, scale: true, splitLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
-                    { type: 'value', gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } }
-                ],
-                dataZoom: [{ type: 'inside', xAxisIndex: [0, 1] }, { type: 'slider', xAxisIndex: [0, 1], bottom: 10 }],
-                series: [
-                    { name: '价格', type: 'line', data: prices, smooth: true, symbol: 'none', lineStyle: { color: '#38bdf8', width: 2 }, areaStyle: { color: 'rgba(56,189,248,0.2)' } },
-                    { name: '成交量', type: 'bar', data: volumes, xAxisIndex: 1, yAxisIndex: 1, itemStyle: { color: function (p) { return (prices[p.dataIndex] >= (prices[p.dataIndex - 1] || prices[p.dataIndex])) ? '#ef4444' : '#22c55e'; } } }
-                ]
-             });
+          .then(function (r) { return r.ok ? r.json() : {}; })
+          .then(function (d) {
+            ch.hideLoading();
+            var times = d.times || [];
+            var prices = d.prices || [];
+            var volumes = d.volumes || [];
+            if (!times.length) { el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">暂无数据</div>'; return; }
+
+            ch.setOption({
+              backgroundColor: 'transparent',
+              tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'cross' },
+                backgroundColor: 'rgba(30,41,59,0.95)',
+                borderColor: '#334155',
+                textStyle: { color: '#e2e8f0' },
+                formatter: function (params) {
+                  if (!params || !params.length) return '';
+                  var idx = params[0].dataIndex;
+                  var t = times[idx] || '';
+                  var p = prices[idx] != null ? prices[idx].toFixed(2) : '--';
+                  var v = volumes[idx] != null ? (volumes[idx] >= 10000 ? (volumes[idx] / 10000).toFixed(1) + '万' : volumes[idx]) : '--';
+                  return t + '<br/>价格: ' + p + '<br/>成交量: ' + v;
+                }
+              },
+              grid: [{ left: 60, right: 60, top: 30, bottom: 80 }, { left: 60, right: 60, top: '85%', height: '10%' }],
+              xAxis: [
+                { type: 'category', data: times, gridIndex: 0, axisLabel: { color: '#94a3b8' }, boundaryGap: false },
+                { type: 'category', data: times, gridIndex: 1, axisLabel: { show: false } }
+              ],
+              yAxis: [
+                { type: 'value', gridIndex: 0, scale: true, splitLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
+                { type: 'value', gridIndex: 1, axisLabel: { show: false }, splitLine: { show: false } }
+              ],
+              dataZoom: [{ type: 'inside', xAxisIndex: [0, 1] }, { type: 'slider', xAxisIndex: [0, 1], bottom: 10 }],
+              series: [
+                { name: '价格', type: 'line', data: prices, smooth: true, symbol: 'none', lineStyle: { color: '#38bdf8', width: 2 }, areaStyle: { color: 'rgba(56,189,248,0.2)' } },
+                { name: '成交量', type: 'bar', data: volumes, xAxisIndex: 1, yAxisIndex: 1, itemStyle: { color: function (p) { return (prices[p.dataIndex] >= (prices[p.dataIndex - 1] || prices[p.dataIndex])) ? '#ef4444' : '#22c55e'; } } }
+              ]
+            });
           })
-          .catch(function() { ch.hideLoading(); el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">加载失败</div>'; });
+          .catch(function () { ch.hideLoading(); el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">加载失败</div>'; });
       } else if (type === 'prediction') {
-         apiGet('/api/market/prediction?horizon=5')
-          .then(function(r) { return r.ok ? r.json() : {}; })
-          .then(function(data) {
-             ch.hideLoading();
-             var history = data.history || {};
-             var histDates = history.dates || [];
-             var histPrices = history.prices || [];
-             var predDates = data.dates || [];
-             var predPrices = data.prices || [];
-             
-             if (!histDates.length) { el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">暂无数据</div>'; return; }
-             
-             // Stitch data
-             var fullDates = histDates.concat(predDates);
-             var fullHist = histPrices.concat(new Array(predDates.length).fill(null));
-             // For prediction line, we need to connect the last history point
-             var lastHistPrice = histPrices[histPrices.length - 1];
-             var fullPred = new Array(histPrices.length - 1).fill(null);
-             fullPred.push(lastHistPrice);
-             fullPred = fullPred.concat(predPrices);
-             
-             ch.setOption({
-                backgroundColor: 'transparent',
-                tooltip: { trigger: 'axis', backgroundColor: 'rgba(30,41,59,0.95)', borderColor: '#334155', textStyle: { color: '#e2e8f0' } },
-                grid: { left: 50, right: 30, top: 30, bottom: 30, containLabel: true },
-                xAxis: { type: 'category', data: fullDates, axisLabel: { color: '#94a3b8' } },
-                yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
-                series: [
-                    { name: '历史', type: 'line', data: fullHist, smooth: true, lineStyle: { color: '#38bdf8', width: 2 } },
-                    { name: '预测', type: 'line', data: fullPred, smooth: true, lineStyle: { color: '#facc15', type: 'dashed', width: 2 } }
-                ]
-             });
+        apiGet('/api/market/prediction?horizon=5')
+          .then(function (r) { return r.ok ? r.json() : {}; })
+          .then(function (data) {
+            ch.hideLoading();
+            var history = data.history || {};
+            var histDates = history.dates || [];
+            var histPrices = history.prices || [];
+            var predDates = data.dates || [];
+            var predPrices = data.prices || [];
+
+            if (!histDates.length) { el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">暂无数据</div>'; return; }
+
+            // Stitch data
+            var fullDates = histDates.concat(predDates);
+            var fullHist = histPrices.concat(new Array(predDates.length).fill(null));
+            // For prediction line, we need to connect the last history point
+            var lastHistPrice = histPrices[histPrices.length - 1];
+            var fullPred = new Array(histPrices.length - 1).fill(null);
+            fullPred.push(lastHistPrice);
+            fullPred = fullPred.concat(predPrices);
+
+            ch.setOption({
+              backgroundColor: 'transparent',
+              tooltip: { trigger: 'axis', backgroundColor: 'rgba(30,41,59,0.95)', borderColor: '#334155', textStyle: { color: '#e2e8f0' } },
+              grid: { left: 50, right: 30, top: 30, bottom: 30, containLabel: true },
+              xAxis: { type: 'category', data: fullDates, axisLabel: { color: '#94a3b8' } },
+              yAxis: { type: 'value', scale: true, splitLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
+              series: [
+                { name: '历史', type: 'line', data: fullHist, smooth: true, lineStyle: { color: '#38bdf8', width: 2 } },
+                { name: '预测', type: 'line', data: fullPred, smooth: true, lineStyle: { color: '#facc15', type: 'dashed', width: 2 } }
+              ]
+            });
           })
-          .catch(function() { ch.hideLoading(); el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">加载失败</div>'; });
+          .catch(function () { ch.hideLoading(); el.innerHTML = '<div class="flex h-full items-center justify-center text-slate-500">加载失败</div>'; });
       }
-      
+
       // Resize handler
-      window.addEventListener('resize', function() { ch.resize(); });
-      window._largeChartInstance = ch; 
+      window.addEventListener('resize', function () { ch.resize(); });
+      window._largeChartInstance = ch;
     }, 100);
   }
 

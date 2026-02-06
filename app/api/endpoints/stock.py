@@ -650,3 +650,44 @@ async def get_stock_diagnose(code: str = Query(..., description="股票代码, �
             "news": news_items
         },
     }
+
+
+@router.get("/suggest")
+async def api_stock_suggest_internal(q: str = "", limit: int = 10):
+    """
+    个股/代码搜索建议 (Frontend compatibility for /api/stock/suggest)
+    """
+    if not q or len(q.strip()) < 1:
+        return {"items": []}
+    
+    import re
+    q = q.strip()[:20]
+    try:
+        df = await get_all_stocks_spot()
+        if df is None or df.empty:
+             return {"items": []}
+             
+        cols = df.columns.tolist()
+        code_col = next((c for c in cols if "代码" in c or "证券代码" in c), "代码")
+        name_col = next((c for c in cols if "名称" in c or "简称" in c), "名称")
+        
+        # Ensure string
+        df[code_col] = df[code_col].astype(str).str.zfill(6)
+        
+        # Filter
+        mask = (
+            df[code_col].str.contains(re.escape(q), case=False, na=False) | 
+            df[name_col].astype(str).str.contains(re.escape(q), case=False, na=False)
+        )
+        sub = df.loc[mask].head(int(limit))
+        
+        items = []
+        for _, row in sub.iterrows():
+            items.append({
+                "code": str(row[code_col]), 
+                "name": str(row[name_col])
+            })
+        return {"items": items}
+    except Exception as e:
+        logger.warning(f"Stock suggest alias failed: {e}")
+        return {"items": []}

@@ -203,6 +203,18 @@
                 class="nav-item w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 rounded-r-lg hover:bg-slate-800/50 hover:text-slate-200">
                 <i class="fas fa-wallet w-6 text-center mr-3 text-lg"></i>交易系统
             </button>
+            <!-- 新功能: 龙虎榜 -->
+            <button onclick="switchMode('dragon')" id="sidenav-dragon"
+                class="nav-item w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 rounded-r-lg hover:bg-slate-800/50 hover:text-slate-200 transition-all group">
+                <i class="fas fa-dragon w-6 text-center mr-3 text-lg text-orange-400 group-hover:text-orange-300"></i>
+                <span class="text-orange-400 group-hover:text-orange-300">龙虎榜</span>
+            </button>
+            <!-- 新功能: 价格预警 -->
+            <button onclick="openAlertModal()" id="sidenav-alerts"
+                class="nav-item w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 rounded-r-lg hover:bg-slate-800/50 hover:text-slate-200 transition-all group">
+                <i class="fas fa-bell w-6 text-center mr-3 text-lg text-yellow-400 group-hover:text-yellow-300"></i>
+                <span class="text-yellow-400 group-hover:text-yellow-300">价格预警</span>
+            </button>
             <button onclick="switchMode('system')" id="sidenav-system"
                 class="nav-item w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 rounded-r-lg hover:bg-slate-800/50 hover:text-slate-200">
                 <i class="fas fa-cog w-6 text-center mr-3 text-lg"></i>系统设置
@@ -581,6 +593,47 @@
                 </div>
             </div>
 
+            <!-- Dragon Tiger View (龙虎榜) -->
+            <div id="view-dragon" class="rox1-view max-w-6xl mx-auto" data-rox1-view="dragon">
+                <div class="glass-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-white flex items-center">
+                            <i class="fas fa-dragon text-orange-400 mr-3"></i>龙虎榜 & 板块轮动
+                        </h2>
+                        <div class="flex gap-2">
+                            <button onclick="exportDragonTiger('csv')"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm">
+                                <i class="fas fa-download mr-1"></i>导出CSV
+                            </button>
+                            <button onclick="exportDragonTiger('xlsx')"
+                                class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-sm">
+                                <i class="fas fa-file-excel mr-1"></i>导出Excel
+                            </button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- 龙虎榜列表 -->
+                        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                            <h3 class="text-lg font-semibold text-white flex items-center mb-4">
+                                <i class="fas fa-list-ol text-amber-400 mr-2"></i>今日龙虎榜
+                            </h3>
+                            <div id="dragon-tiger-list" class="space-y-2 max-h-96 overflow-y-auto">
+                                <p class="text-slate-400 text-sm">加载中...</p>
+                            </div>
+                        </div>
+                        <!-- 板块轮动 -->
+                        <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                            <h3 class="text-lg font-semibold text-white flex items-center mb-4">
+                                <i class="fas fa-sync-alt text-purple-400 mr-2"></i>板块轮动分析
+                            </h3>
+                            <div id="sector-rotation-list" class="space-y-2 max-h-96 overflow-y-auto">
+                                <p class="text-slate-400 text-sm">加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="view-trading" class="rox1-view max-w-5xl mx-auto" data-rox1-view="trading">
                 <div class="glass-card p-8">
                     <h2 class="text-2xl font-bold text-white mb-6">交易工作台</h2>
@@ -848,6 +901,7 @@
     <script>window.ROX_SKIP_AUTH_ON_LOAD = false;</script>
     <script src="/static/js/auth_ui.js"></script>
     <script src="/static/js/rox1_views.js"></script>
+    <script src="/static/js/enhanced_features.js"></script>
     <script type="module" src="/static/js/main.js"></script>
 </body>
 

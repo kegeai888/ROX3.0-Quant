@@ -98,7 +98,7 @@ ROX 3.0 采用响应式设计，完美适配 iPhone 与 Android。
 
 1. **克隆代码库**
    ```bash
-   git clone https://github.com/a1050154895/ROX3.0-Quant.git
+   git clone https://github.com/kegeai888/ROX3.0-Quant.git
    cd ROX3.0-Quant
    ```
 

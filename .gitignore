@@ -63,3 +63,32 @@ share.log
 # Large files (>100MB)
 /data/docs.db
 /data/docs.db*
+
+# Large files and models
+*.pdf
+*.docx
+*.doc
+*.pth
+*.pt
+*.h5
+*.pkl
+*.pickle
+*.model
+*.bin
+*.onnx
+*.safetensors
+
+# Data files
+app/data/documents/
+app/data/*.db
+app/data/*.sqlite
+
+# Temporary files
+/tmp/
+*.tmp
+*.bak
+*.swp
+nohup.out
+
+# Jupyter
+.ipynb_checkpoints/

@@ -20,5 +20,11 @@ python-jose[cryptography]
 python-multipart
 redis==5.0.1
 duckduckgo-search
+websocket-client
+ccxt
+yfinance
+apscheduler
+python-dotenv
+sqlalchemy
 
 scipy

@@ -4,6 +4,7 @@ import sqlite3
 import datetime
 import time
 from collections import defaultdict
+from typing import Optional
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from app.auth import (

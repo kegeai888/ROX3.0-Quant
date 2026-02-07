@@ -40,6 +40,10 @@ window.toggleBeginnerMode = function () {
     }
 };
 
+function openMobileConnectModal() {
+    document.getElementById('mobile-connect-modal').classList.remove('hidden');
+}
+
 // ================= MACRO DASHBOARD =================
 let macroChart = null;
 

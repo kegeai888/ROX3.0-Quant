@@ -1530,35 +1530,56 @@ async def api_market_weekly():
     """
     Returns weekly stock recommendations，含宏观简要、仓位建议、行业风格、推荐结构化。
     """
-    loop = asyncio.get_event_loop()
-    macro = await loop.run_in_executor(None, get_real_macro_data)
-    macro_brief = _weekly_macro_brief(macro)
-    return JSONResponse({
-        "macro_brief": macro_brief,
-        "position_suggestion": "建议总仓位 60%，底仓 30%、律动 30%、预备 40%；可根据宏观与个股信号微调。",
-        "sector_style": "偏价值与景气：消费、金融、有色；成长关注锂电与科技。",
-        "items": [
-            {
-                "code": "600519", "name": "贵州茅台", "reason": "消费复苏龙头，外资持续流入",
-                "target": "1850.00", "stop": "1680.00", "score": 92,
-                "tags": ["基本面", "资金"], "score_breakdown": {"tech": 85, "fund": 90, "fundamental": 92}
-            },
-            {
-                "code": "300750", "name": "宁德时代", "reason": "锂电产能出清，业绩超预期",
-                "target": "210.00", "stop": "175.00", "score": 88,
-                "tags": ["技术", "基本面"], "score_breakdown": {"tech": 88, "fund": 82, "fundamental": 90}
-            },
-            {
-                "code": "601899", "name": "紫金矿业", "reason": "铜金价格共振上涨",
-                "target": "19.50", "stop": "17.20", "score": 85,
-                "tags": ["基本面", "资金"], "score_breakdown": {"tech": 82, "fund": 88, "fundamental": 86}
+    # Wrap everything in try-except to ensure we always return a valid structure
+    try:
+        loop = asyncio.get_event_loop()
+        # Use asyncio.wait_for for macro data to avoid hanging
+        try:
+             macro = await asyncio.wait_for(loop.run_in_executor(None, get_real_macro_data), timeout=5.0)
+        except Exception as e_macro:
+             logger.warning(f"Weekly macro fetch failed: {e_macro}")
+             macro = {} # Will cause _weekly_macro_brief to return default
+
+        macro_brief = _weekly_macro_brief(macro)
+        return JSONResponse({
+            "macro_brief": macro_brief,
+            "position_suggestion": "建议总仓位 60%，底仓 30%、律动 30%、预备 40%；可根据宏观与个股信号微调。",
+            "sector_style": "偏价值与景气：消费、金融、有色；成长关注锂电与科技。",
+            "items": [
+                {
+                    "code": "600519", "name": "贵州茅台", "reason": "消费复苏龙头，外资持续流入",
+                    "target": "1850.00", "stop": "1680.00", "score": 92,
+                    "tags": ["基本面", "资金"], "score_breakdown": {"tech": 85, "fund": 90, "fundamental": 92}
+                },
+                {
+                    "code": "300750", "name": "宁德时代", "reason": "锂电产能出清，业绩超预期",
+                    "target": "210.00", "stop": "175.00", "score": 88,
+                    "tags": ["技术", "基本面"], "score_breakdown": {"tech": 88, "fund": 82, "fundamental": 90}
+                },
+                {
+                    "code": "601899", "name": "紫金矿业", "reason": "铜金价格共振上涨",
+                    "target": "19.50", "stop": "17.20", "score": 85,
+                    "tags": ["基本面", "资金"], "score_breakdown": {"tech": 82, "fund": 88, "fundamental": 86}
+                }
+            ],
+            "strategy_334": {
+                "labels": ["底仓30%", "律动30%", "预备40%"],
+                "data": [30, 30, 40]
             }
-        ],
-        "strategy_334": {
-            "labels": ["底仓30%", "律动30%", "预备40%"],
-            "data": [30, 30, 40]
-        }
-    })
+        })
+    except Exception as e:
+        logger.error(f"Weekly endpoint critical error: {e}")
+        # Return a safe fallback JSON
+        return JSONResponse({
+             "macro_brief": "数据加载异常，建议暂时观望。",
+             "position_suggestion": "建议控制仓位。",
+             "sector_style": "--",
+             "items": [],
+             "strategy_334": {
+                "labels": ["底仓", "律动", "预备"],
+                "data": [0, 0, 0]
+            }
+        })
 
 @router.get("/community/feed")
 async def api_community_feed():
@@ -2021,4 +2042,42 @@ async def api_kline_patterns(code: str, days: int = 60):
     except Exception as e:
         logger.warning(f"K线形态识别API异常: {e}")
         return {"patterns": [], "error": str(e)}
+
+
+@router.get("/concepts")
+async def get_market_concepts(limit: int = 10):
+    """
+    Get top concepts by fund flow (Proxy for Primary Market Hot Themes)
+    """
+    try:
+        # ak.stock_fund_flow_concept(symbol="即时") returns concept fund flow
+        flow_df = ak.stock_fund_flow_concept(symbol="即时")
+        # Columns: 行业, 行业指数, 净流入万, ...
+        # Sort by Net Inflow
+        if '净额' in flow_df.columns:
+            target_col = '净额'
+        elif '净流入' in flow_df.columns:
+            target_col = '净流入'
+        elif '当日净流入' in flow_df.columns: 
+            target_col = '当日净流入'
+        else:
+            # Fallback or strict match
+            target_col = '净额'
+            
+        # Convert to numeric
+        flow_df[target_col] = pd.to_numeric(flow_df[target_col], errors='coerce')
+        flow_df = flow_df.sort_values(target_col, ascending=False).head(limit)
+        
+        concepts = []
+        for _, row in flow_df.iterrows():
+            concepts.append({
+                "name": row['行业'], # Concept Name
+                "index": row['行业指数'],
+                "net_inflow": float(row[target_col]),
+                "change_pct": float(row['行业-涨跌幅']) if '行业-涨跌幅' in row else 0.0
+            })
+        return concepts
+    except Exception as e:
+        logger.error(f"Concept API Error: {e}")
+        return []
 

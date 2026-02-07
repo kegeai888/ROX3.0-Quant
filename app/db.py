@@ -432,6 +432,63 @@ def ensure_schema(conn: sqlite3.Connection):
         """
     )
     conn.execute("CREATE INDEX IF NOT EXISTS idx_alerts_user_pending ON alerts(user_id, triggered_at)")
+
+    # Multi-Asset Support Tables (Phase 1)
+    # Crypto Spot Cache
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS crypto_spot (
+            symbol TEXT PRIMARY KEY,
+            price REAL,
+            change_24h REAL,
+            volume_24h REAL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    # Global Stock Spot Cache
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS global_spot (
+            symbol TEXT PRIMARY KEY,
+            price REAL,
+            change_pct REAL,
+            volume REAL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    
+    # Phase 4: Community & Social
+    # Marketplace Items
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS marketplace_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            author TEXT NOT NULL,
+            description TEXT,
+            price REAL DEFAULT 0.0,
+            install_count INTEGER DEFAULT 0,
+            rating REAL DEFAULT 5.0,
+            file_path TEXT, -- e.g. "official/grid_master.py"
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    # Ensure users table has profile fields
+    try:
+        cur = conn.execute("PRAGMA table_info(users)")
+        cols = [r[1] for r in cur.fetchall()]
+        if "avatar" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT '/static/avatars/default.png'")
+        if "bio" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN bio TEXT")
+        if "tags" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN tags TEXT")
+    except Exception:
+        pass
+
     conn.commit()
 
 def init_db():

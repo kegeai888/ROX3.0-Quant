@@ -215,6 +215,12 @@
                 <i class="fas fa-bell w-6 text-center mr-3 text-lg text-yellow-400 group-hover:text-yellow-300"></i>
                 <span class="text-yellow-400 group-hover:text-yellow-300">价格预警</span>
             </button>
+            <!-- 新功能: 策略超市 -->
+            <button onclick="switchMode('store')" id="sidenav-store"
+                class="nav-item w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 rounded-r-lg hover:bg-slate-800/50 hover:text-slate-200 transition-all group">
+                <i class="fas fa-shopping-bag w-6 text-center mr-3 text-lg text-pink-400 group-hover:text-pink-300"></i>
+                <span class="text-pink-400 group-hover:text-pink-300">策略超市</span>
+            </button>
             <button onclick="switchMode('system')" id="sidenav-system"
                 class="nav-item w-full flex items-center px-4 py-3 text-sm font-medium text-slate-400 rounded-r-lg hover:bg-slate-800/50 hover:text-slate-200">
                 <i class="fas fa-cog w-6 text-center mr-3 text-lg"></i>系统设置
@@ -249,6 +255,15 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
                     <span id="ws-status-text">系统在线</span>
                 </div>
+                <!-- Global Market Switcher -->
+                <div class="hidden md:flex items-center bg-slate-800/50 rounded-lg p-1">
+                    <button onclick="switchMarket('CN')" id="market-btn-CN"
+                        class="px-3 py-1 rounded text-xs font-bold text-white bg-sky-600 transition-colors">A股</button>
+                    <button onclick="switchMarket('US')" id="market-btn-US"
+                        class="px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">美股</button>
+                    <button onclick="switchMarket('CRYPTO')" id="market-btn-CRYPTO"
+                        class="px-3 py-1 rounded text-xs font-bold text-slate-400 hover:text-white hover:bg-slate-700 transition-colors">Crypto</button>
+                </div>
                 <div id="market-index-bar" class="flex gap-4 font-mono text-xs">
                     <!-- Dynamic Indices Here -->
                 </div>
@@ -258,9 +273,9 @@
             <div class="flex items-center gap-4">
                 <button class="p-2 text-slate-400 hover:text-white transition-colors" title="通知"><i
                         class="fas fa-bell"></i></button>
-                <div
-                    class="h-8 w-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-600 border border-slate-500/30 flex items-center justify-center text-xs font-bold text-slate-300 cursor-pointer hover:border-sky-500 transition-colors">
-                    U
+                <div onclick="openProfileModal()"
+                    class="h-8 w-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-600 border border-slate-500/30 flex items-center justify-center text-xs font-bold text-slate-300 cursor-pointer hover:border-sky-500 transition-colors overflow-hidden">
+                    <img id="header-avatar" src="/static/avatars/default.png" class="w-full h-full object-cover">
                 </div>
             </div>
         </header>
@@ -634,6 +649,21 @@
                 </div>
             </div>
 
+            <!-- VIEW: 策略超市 -->
+            <div id="view-store" class="rox1-view max-w-6xl mx-auto" data-rox1-view="store">
+                <div class="glass-card p-8 min-h-[80vh]">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                        <i class="fas fa-shopping-bag text-pink-400"></i> 策略超市
+                    </h2>
+                    <div id="store-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="col-span-full text-center text-slate-500 py-20">
+                            <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+                            <p>正在加载精选策略...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="view-trading" class="rox1-view max-w-5xl mx-auto" data-rox1-view="trading">
                 <div class="glass-card p-8">
                     <h2 class="text-2xl font-bold text-white mb-6">交易工作台</h2>
@@ -708,6 +738,38 @@
                 <div class="glass-card p-8">
                     <h2 class="text-2xl font-bold text-white mb-6">系统状态</h2>
                     <div id="system-status-content" class="space-y-4"></div>
+
+                    <div class="bg-slate-800/30 p-6 rounded-xl border border-slate-700/50 mt-8">
+                        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-cloud-upload-alt text-sky-400"></i> 云端数据同步
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div
+                                class="bg-slate-900/50 p-4 rounded-lg border border-slate-800 flex flex-col items-center text-center">
+                                <i class="fas fa-download text-3xl text-emerald-400 mb-3"></i>
+                                <h4 class="font-bold text-slate-200 mb-1">备份数据</h4>
+                                <p class="text-xs text-slate-500 mb-4">打包自选股、策略和设置</p>
+                                <button onclick="downloadBackup()"
+                                    class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm transition-colors">
+                                    下载备份 (ZIP)
+                                </button>
+                            </div>
+                            <div
+                                class="bg-slate-900/50 p-4 rounded-lg border border-slate-800 flex flex-col items-center text-center">
+                                <i class="fas fa-upload text-3xl text-indigo-400 mb-3"></i>
+                                <h4 class="font-bold text-slate-200 mb-1">恢复数据</h4>
+                                <p class="text-xs text-slate-500 mb-4">从备份文件还原</p>
+                                <div class="relative">
+                                    <input type="file" id="restore-file-input" class="hidden" accept=".zip"
+                                        onchange="uploadRestore(this)">
+                                    <button onclick="document.getElementById('restore-file-input').click()"
+                                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-sm transition-colors">
+                                        上传备份并恢复
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -777,6 +839,46 @@
 
     <div id="toast"
         class="fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full bg-slate-800/90 border border-slate-700 text-white shadow-xl backdrop-blur-md opacity-0 transition-opacity pointer-events-none z-[110] font-medium text-sm transform translate-y-2">
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal"
+        class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="glass-card w-full max-w-md p-6 relative">
+            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i
+                    class="fas fa-times"></i></button>
+            <h3 class="text-xl font-bold text-white mb-6 text-center">个人名片</h3>
+
+            <div class="flex flex-col items-center mb-6">
+                <div
+                    class="w-24 h-24 rounded-full bg-slate-700 mb-4 overflow-hidden border-2 border-sky-500 shadow-lg shadow-sky-500/20 relative group cursor-pointer">
+                    <img id="profile-avatar-img" src="/static/avatars/default.png" class="w-full h-full object-cover">
+                    <!-- <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-xs text-white">更换</div> -->
+                </div>
+                <h4 id="profile-username" class="text-lg font-bold text-white">User</h4>
+                <div id="profile-tags-display" class="flex gap-2 mt-2">
+                    <span
+                        class="px-2 py-0.5 bg-slate-800 rounded text-xxs text-slate-400 border border-slate-700">新手</span>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs text-slate-500 mb-1 block">个人简介</label>
+                    <textarea id="profile-bio-input"
+                        class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-300 h-20 resize-none focus:border-sky-500 outline-none"
+                        placeholder="写一句座右铭..."></textarea>
+                </div>
+                <div>
+                    <label class="text-xs text-slate-500 mb-1 block">头衔/标签 (用逗号分隔)</label>
+                    <input id="profile-tags-input" type="text"
+                        class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-slate-300 focus:border-sky-500 outline-none"
+                        placeholder="A股实战派, 趋势交易">
+                </div>
+                <button onclick="saveProfile()"
+                    class="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded font-bold transition-all">保存修改</button>
+            </div>
+        </div>
     </div>
 
     <!-- Heatmap Modal -->
@@ -899,10 +1001,14 @@
         };
     </script>
     <script>window.ROX_SKIP_AUTH_ON_LOAD = false;</script>
+    <script src="/static/js/utils/format_utils.js"></script>
     <script src="/static/js/auth_ui.js"></script>
     <script src="/static/js/rox1_views.js"></script>
     <script src="/static/js/enhanced_features.js"></script>
+    <script src="/static/js/rox_ui_phase5.js"></script>
+    <script src="/static/js/rox_ui_phase6.js"></script>
     <script type="module" src="/static/js/main.js"></script>
 </body>
+
 
 </html>

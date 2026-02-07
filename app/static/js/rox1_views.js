@@ -578,36 +578,47 @@
 
         var items = data.items || [];
         var html = '';
-        items.forEach(function (item) {
-          html += '<div class="glass p-4 rounded-xl border border-slate-700/50">';
-          html += '<div class="flex justify-between items-center mb-2"><span class="font-bold text-slate-200">' + (item.name || '') + '</span><span class="text-xs font-mono text-slate-500">' + (item.code || '') + '</span></div>';
-          html += '<p class="text-sm text-slate-400 mb-2">' + (item.reason || '') + '</p>';
-          if (item.tags && item.tags.length) {
-            html += '<div class="flex flex-wrap gap-1 mb-2">';
-            item.tags.forEach(function (t) { html += '<span class="px-1.5 py-0.5 rounded text-xxs bg-slate-700/80 text-sky-300">' + (t || '') + '</span>'; });
+        try {
+          items.forEach(function (item) {
+            html += '<div class="glass p-4 rounded-xl border border-slate-700/50">';
+            html += '<div class="flex justify-between items-center mb-2"><span class="font-bold text-slate-200">' + (item.name || '') + '</span><span class="text-xs font-mono text-slate-500">' + (item.code || '') + '</span></div>';
+            html += '<p class="text-sm text-slate-400 mb-2">' + (item.reason || '') + '</p>';
+            if (item.tags && item.tags.length) {
+              html += '<div class="flex flex-wrap gap-1 mb-2">';
+              item.tags.forEach(function (t) { html += '<span class="px-1.5 py-0.5 rounded text-xxs bg-slate-700/80 text-sky-300">' + (t || '') + '</span>'; });
+              html += '</div>';
+            }
+            if (item.score_breakdown && typeof item.score_breakdown === 'object') {
+              var sb = item.score_breakdown;
+              html += '<div class="text-xxs text-slate-500 mb-2">技术 ' + (sb.tech != null ? sb.tech : '--') + ' / 资金 ' + (sb.fund != null ? sb.fund : '--') + ' / 基本面 ' + (sb.fundamental != null ? sb.fundamental : '--') + '</div>';
+            }
+            html += '<div class="flex gap-4 text-xs"><span class="text-up">目标 ' + (item.target ? FormatUtils.formatPrice(item.target) : '--') + '</span><span class="text-down">止损 ' + (item.stop ? FormatUtils.formatPrice(item.stop) : '--') + '</span><span class="text-amber-400">评分 ' + (item.score || '--') + '</span></div>';
             html += '</div>';
-          }
-          if (item.score_breakdown && typeof item.score_breakdown === 'object') {
-            var sb = item.score_breakdown;
-            html += '<div class="text-xxs text-slate-500 mb-2">技术 ' + (sb.tech != null ? sb.tech : '--') + ' / 资金 ' + (sb.fund != null ? sb.fund : '--') + ' / 基本面 ' + (sb.fundamental != null ? sb.fundamental : '--') + '</div>';
-          }
-          html += '<div class="flex gap-4 text-xs"><span class="text-up">目标 ' + (item.target ? FormatUtils.formatPrice(item.target) : '--') + '</span><span class="text-down">止损 ' + (item.stop ? FormatUtils.formatPrice(item.stop) : '--') + '</span><span class="text-amber-400">评分 ' + (item.score || '--') + '</span></div>';
-          html += '</div>';
-        });
-        cardsEl.innerHTML = html || '<p class="text-slate-400 text-sm">暂无推荐</p>';
-
-        var s334 = data.strategy_334;
-        if (s334 && chartEl && typeof echarts !== 'undefined') {
-          var colors = ['#38bdf8', '#facc15', '#34d399'];
-          var barColors = (s334.data || []).map(function (_, i) { return colors[i % colors.length]; });
-          var ch = echarts.init(chartEl);
-          ch.setOption({
-            tooltip: { trigger: 'axis', backgroundColor: 'rgba(30,41,59,0.95)', borderColor: '#334155', textStyle: { color: '#e2e8f0', fontSize: 11 } },
-            grid: { left: 10, right: 10, top: 20, bottom: 10, containLabel: true },
-            xAxis: { type: 'category', data: s334.labels || [], axisLabel: { color: '#94a3b8', interval: 0 } },
-            yAxis: { type: 'value', max: 100, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: '#334155' } } },
-            series: [{ type: 'bar', barWidth: '60%', data: (s334.data || []).map(function (v, i) { return { value: v, itemStyle: { color: barColors[i] } }; }) }]
           });
+          cardsEl.innerHTML = html || '<p class="text-slate-400 text-sm">暂无推荐</p>';
+        } catch (e) {
+          console.error("Weekly items render failed:", e);
+          cardsEl.innerHTML = '<p class="text-slate-400 text-sm">推荐加载异常</p>';
+        }
+
+        try {
+          var s334 = data.strategy_334;
+          if (s334 && chartEl && typeof echarts !== 'undefined') {
+            var colors = ['#38bdf8', '#facc15', '#34d399'];
+            var barColors = (s334.data || []).map(function (_, i) { return colors[i % colors.length]; });
+            var ch = echarts.init(chartEl);
+            ch.setOption({
+              tooltip: { trigger: 'axis', backgroundColor: 'rgba(30,41,59,0.95)', borderColor: '#334155', textStyle: { color: '#e2e8f0', fontSize: 11 } },
+              grid: { left: 10, right: 10, top: 20, bottom: 10, containLabel: true },
+              xAxis: { type: 'category', data: s334.labels || [], axisLabel: { color: '#94a3b8', interval: 0 } },
+              yAxis: { type: 'value', max: 100, axisLabel: { color: '#94a3b8' }, splitLine: { lineStyle: { color: '#334155' } } },
+              series: [{ type: 'bar', barWidth: '60%', data: (s334.data || []).map(function (v, i) { return { value: v, itemStyle: { color: barColors[i] } }; }) }]
+            });
+            window.addEventListener('resize', function () { ch.resize(); });
+          }
+        } catch (e) {
+          console.error("334 Chart render failed:", e);
+          if (chartEl) chartEl.innerHTML = '<p class="text-xs text-slate-500">图表加载失败</p>';
         }
       })
       .catch(function () {

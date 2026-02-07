@@ -5,6 +5,7 @@ import datetime
 import time
 from collections import defaultdict
 from jose import JWTError, jwt
+from pydantic import BaseModel
 from app.auth import (
     authenticate_user, create_access_token, get_password_hash, create_user,
     get_user_by_username, get_current_user, Token, User, UserCreate,
@@ -109,3 +110,37 @@ async def register(user: UserCreate, conn: sqlite3.Connection = Depends(get_db))
 @router.get("/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+class UserUpdate(BaseModel):
+    bio: Optional[str] = None
+    avatar: Optional[str] = None
+    tags: Optional[str] = None
+
+@router.patch("/users/me", response_model=User)
+async def update_user_me(
+    data: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    conn: sqlite3.Connection = Depends(get_db)
+):
+    updates = []
+    params = []
+    
+    if data.bio is not None:
+        updates.append("bio = ?")
+        params.append(data.bio)
+    if data.avatar is not None:
+        updates.append("avatar = ?")
+        params.append(data.avatar)
+    if data.tags is not None:
+        updates.append("tags = ?")
+        params.append(data.tags)
+        
+    if not updates:
+        return current_user
+        
+    params.append(current_user.id)
+    query = f"UPDATE users SET {', '.join(updates)} WHERE id = ?"
+    conn.execute(query, params)
+    conn.commit()
+    
+    return get_user_by_username(conn, current_user.username)

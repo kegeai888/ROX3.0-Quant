@@ -20,6 +20,7 @@ from app.rox_quant.strategies.jq_10y_52x import JQTenYearFiftyTwoTimes
 from app.rox_quant.strategies.jq_small_cap import JQSmallCap
 from app.rox_quant.strategies.jq_etf_rotation import JQETFRotation
 from app.rox_quant.strategies.jq_dragon import JQDragonTrend
+from app.rox_quant.strategies.jq_snake_move import JQSnakeMove
 from app.rox_quant.strategies.book_small_cap_timing import BookSmallCapTiming
 from app.rox_quant.strategies.book_dual_thrust import BookDualThrust
 from app.rox_quant.strategies.book_double_ma import BookDoubleMA
@@ -34,6 +35,7 @@ STRATEGY_MAP = {
     "jq_small_cap": JQSmallCap,
     "jq_etf_rotation": JQETFRotation,
     "jq_dragon": JQDragonTrend,
+    "jq_snake_move": JQSnakeMove,
     "book_small_cap_timing": BookSmallCapTiming,
     "book_dual_thrust": BookDualThrust,
     "book_double_ma": BookDoubleMA,
@@ -51,6 +53,7 @@ async def get_strategies():
             {"id": "jq_small_cap", "name": "Small Cap Rotation", "description": "Low price/Small cap rotation with trend filter"},
             {"id": "jq_etf_rotation", "name": "ETF Momentum", "description": "Multi-asset ETF rotation based on R-Squared Momentum"},
             {"id": "jq_dragon", "name": "Dragon Trend", "description": "Follow stocks with consecutive Limit Ups"},
+            {"id": "jq_snake_move", "name": "Snake Move (蛇皮走位)", "description": "Internalized: Small Cap + Variance Timing + Low Price"},
             {"id": "book_small_cap_timing", "name": "Small Cap + 2-8 Timing", "description": "A-Share Classic: Small Cap Selection with Index Timing Filter"},
             {"id": "book_dual_thrust", "name": "Dual Thrust", "description": "Classic CTA: Range Breakout Strategy"},
             {"id": "book_double_ma", "name": "Double Moving Average", "description": "Classic Trend: Golden Cross / Death Cross"},

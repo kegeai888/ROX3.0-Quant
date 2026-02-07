@@ -123,27 +123,44 @@ class AIClient:
 
     async def chat_with_search(self, message: str, context: str = "", model: Optional[str] = None, provider: Optional[str] = None):
         """
-        Chat with optional web search and model selection. provider/model 缺省用当前配置。
+        Chat with optional web search and LOCAL KNOWLEDGE BASE context.
         """
         client = self.get_client(provider)
         model = model or self.get_default_model(provider)
-        # 1. Decide if search is needed
+        
+        # --- RAG: Search Local KB First ---
+        from app.services.kb_service import KBService
+        kb_service = KBService()
+        
+        # Search for relevant local docs (Strategies, Books, etc.)
+        rag_hits = kb_service.search_local(message, limit=3)
+        rag_context = ""
+        if rag_hits:
+            rag_context = "\n\n【本地知识库参考 (User's Knowledge Base)】:\n"
+            for hit in rag_hits:
+                rag_context += f"- [{hit.get('title')}]: {hit.get('summary')[:300]}...\n"
+            rag_context += "\n(请结合以上本地知识库内容回答用户，如果相关度高，请明确引用)"
+
+        # Web Search if needed
         search_results = []
         if "?" in message or "查询" in message or "搜索" in message or "为何" in message or "原因" in message:
             search_results = self.search_web(message)
-        search_context = ""
+            
+        search_context_str = ""
         if search_results:
-            search_context = "\n\n【联网搜索结果】:\n" + "\n".join([f"- {r['title']}: {r['body']}" for r in search_results])
+            search_context_str = "\n\n【联网搜索结果】:\n" + "\n".join([f"- {r['title']}: {r['body']}" for r in search_results])
+            
         system_prompt = f"""
         你是一个专业的量化交易助手 ROX。
         你的任务是回答用户关于金融市场、股票和投资策略的问题。
         
         {context}
         
-        {search_context}
+        {rag_context}
+        {search_context_str}
         
-        如果提供了搜索结果，请优先基于搜索结果回答。
-        如果问题涉及实时性很强的信息（如今天为什么跌），请明确指出你是基于搜索结果回答的。
+        如果提供了【本地知识库参考】，说明这是用户上传的独家策略或书籍，请**优先**结合这些内容回答，并告诉用户你是参考了哪个文档。
+        如果提供了联网搜索结果，请辅助补充实时信息。
         保持回答专业、客观、简洁。
         """
         try:
@@ -171,10 +188,29 @@ class AIClient:
 
     async def analyze_stock(self, stock_name, stock_code, price, indicators, model: Optional[str] = None, provider: Optional[str] = None):
         """
-        Analyze stock based on technical indicators and return structured JSON.
+        Analyze stock based on technical indicators AND local strategy knowledge.
         """
-        system_prompt = """
-        你是一个专业的量化交易助手 ROX。请根据提供的股票数据和技术指标，进行深度分析。
+        # --- RAG: Find matching strategies ---
+        from app.services.kb_service import KBService
+        kb_service = KBService()
+        
+        # Search for strategies related to current stock condition or generic strategy keywords
+        # We search for "strategy" or specific indicator names present in 'indicators'
+        # For simplicity, we search for the stock name + "策略" to see if there are specific notes, or generic terms.
+        # Actually, let's search for "小市值" if cap is small, or just general strategy docs.
+        # Let's just fetch top general strategies for now to "prime" the AI with the user's style.
+        rag_hits = kb_service.search_local("策略", limit=2) 
+        
+        rag_context = ""
+        if rag_hits:
+            rag_context = "【参考策略逻辑】:\n"
+            for hit in rag_hits:
+                rag_context += f"- 依据《{hit.get('title')}》: {hit.get('summary')[:200]}...\n"
+
+        system_prompt = f"""
+        你是一个专业的量化交易助手 ROX。请根据提供的股票数据、技术指标以及参考策略，进行深度分析。
+        
+        {rag_context}
         
         【核心投资逻辑】
         1. **中庸之道**：寻找价值与价格的均衡点，拒绝偏执。
@@ -182,30 +218,29 @@ class AIClient:
            - 30% 底仓（趋势初期）
            - 30% 浮动仓位（跟随律动/波段）
            - 40% 预备队（现金，应对极端情况）
-        3. **短股长金与向心坍缩**：关注宏观周期（繁荣/衰退/萧条/复苏），在衰退向萧条过渡期重视贵金属与防御性资产。
-        4. **律动（庸）**：不预测绝对顶底，通过波段操作（高抛低吸）将持仓成本降至负数。
+        3. **本地策略融合**：如果上述【参考策略逻辑】与当前股票匹配（例如小市值、高股息等），请在分析中引用该策略的思路。
         
         请返回严格的 JSON 格式，不要包含 markdown 代码块标记。
         JSON 结构如下：
-        {
+        {{
             "p_final": 85, // 综合胜率 (0-100)
             "f_final": 60, // 建议仓位 (遵循334原则，如建议底仓则30，加仓则60)
             "b_val": 3.5, // 盈亏比
             "stars": "⭐⭐⭐⭐", // 评级
             "suggest_stop_loss": 10.5, // 建议止损价
             "p_target": 12.0, // 目标价
-            "comment": "简短的一句话点评（融入中庸/律动/周期视角）",
-            "thinking": {
+            "comment": "简短的一句话点评（融入中庸/律动/周期视角，或引用本地策略）",
+            "thinking": {{
                 "reason": "核心推荐理由",
-                "logic": "详细的逻辑分析过程（结合宏观周期与企业基本面）",
+                "logic": "详细的逻辑分析过程（结合宏观周期与企业基本面，若符合本地策略请提及）",
                 "results": "预期结果"
-            },
-            "t_suggestions": {
+            }},
+            "t_suggestions": {{
                 "buy": 10.8, // 律动低吸点
                 "sell": 11.5, // 律动高抛点
                 "space": 6.5
-            }
-        }
+            }}
+        }}
         """
         
         user_content = f"""
@@ -295,7 +330,9 @@ class AIClient:
         except Exception as e:
             import traceback
             print(f"AI Briefing failed: {e}")
-            return f"市场震荡整理，建议关注核心资产。（AI服务暂不可用: {str(e)[:20]}...）"
+            print(f"AI Briefing failed: {e}")
+            # Mock fallback if AI fails
+            return "市场今日呈现震荡整理态势。建议保持耐心，关注核心资产与业绩确定性高的板块。请注意控制仓位，防范短期波动风险。（AI 智能摘要服务暂不可用，已为您切换至基础模式）"
 
     async def summarize_screen_results(self, items: List[Dict[str, Any]], max_items: int = 30, model: Optional[str] = None, provider: Optional[str] = None) -> str:
         """对选股结果列表做 AI 总结，供条件选股+AI 闭环使用。"""

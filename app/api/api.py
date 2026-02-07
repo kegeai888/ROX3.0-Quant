@@ -58,6 +58,10 @@ api_group.include_router(portfolio.router, prefix="/portfolio", tags=["portfolio
 from app.api.endpoints import agents
 api_group.include_router(agents.router, tags=["agents"])
 
+# 策略市场 (新添加)
+from app.api.endpoints import marketplace
+api_group.include_router(marketplace.router)
+
 # 数据导出 (新添加)
 from app.api.endpoints import export
 api_group.include_router(export.router, tags=["export"])
@@ -65,6 +69,19 @@ api_group.include_router(export.router, tags=["export"])
 # 价格预警 (新添加)
 from app.api.endpoints import alerts
 api_group.include_router(alerts.router, tags=["alerts"])
+
+# 数据同步 (新添加)
+# 数据同步 (新添加)
+from app.api.endpoints import sync
+api_group.include_router(sync.router)
+
+# 宏观数据 (Phase 6)
+from app.api.endpoints import macro
+api_group.include_router(macro.router)
+
+# 市场资讯 (Phase 6)
+from app.api.endpoints import info
+api_group.include_router(info.router)
 
 # 将API组添加到主路由
 api_router.include_router(api_group)

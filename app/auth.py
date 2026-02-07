@@ -30,6 +30,9 @@ class User(BaseModel):
     id: int
     username: str
     role: str = "user"
+    bio: Optional[str] = None
+    avatar: Optional[str] = None
+    tags: Optional[str] = None
 
 class UserCreate(BaseModel):
     username: str

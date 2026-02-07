@@ -5,6 +5,8 @@ import random
 import datetime
 from app.rox_quant.data_manager import DataManager
 from app.rox_quant.alltick_client import AllTickClient
+from app.rox_quant.datasources.crypto import CryptoProvider
+from app.rox_quant.datasources.global_stock import GlobalStockProvider
 
 
 @dataclass
@@ -30,6 +32,10 @@ class DataProvider:
         self._em_progress = {"step": "", "done": 0, "total": 0, "eta": None, "net": "unknown", "error": None}
         self._em_last = {}
         self.data_manager = DataManager()
+        
+        # Initialize Multi-Asset Providers
+        self.crypto_provider = CryptoProvider()
+        self.global_provider = GlobalStockProvider()
         
         # Initialize AllTick Client
         self.alltick = None
@@ -67,7 +73,27 @@ class DataProvider:
                 last_err = e
         return None
 
+    def _is_crypto(self, symbol: str) -> bool:
+        return "/" in symbol
+
+    def _is_global(self, symbol: str) -> bool:
+        # Heuristic: contains dot (700.HK) or all letters (AAPL) and not starting with sh/sz
+        s = str(symbol).lower()
+        if "/" in s: return False
+        if s.startswith("sh") or s.startswith("sz"): return False
+        # Pure numeric is likely A-share code (e.g. 600519 passed without prefix)
+        if s.isdigit(): return False
+        if "." in s: return True 
+        if s.isalpha(): return True
+        return False
+
     def get_history(self, symbol: str, days: int = 120) -> List[PricePoint]:
+        # Route to specific providers
+        if self._is_crypto(symbol):
+            return self.crypto_provider.get_history(symbol, days)
+        if self._is_global(symbol):
+            return self.global_provider.get_history(symbol, days)
+
         try:
             key = (symbol, days)
             if key in self._cache_history:
@@ -254,6 +280,11 @@ class DataProvider:
         Get a full real-time quote for a stock.
         Returns dict with keys: price, open, high, low, volume, pre_close, change, change_pct, time.
         """
+        if self._is_crypto(symbol):
+            return self.crypto_provider.get_realtime_quote(symbol)
+        if self._is_global(symbol):
+            return self.global_provider.get_realtime_quote(symbol)
+
         res = {
             "price": 0.0, "open": 0.0, "high": 0.0, "low": 0.0, 
             "volume": 0.0, "pre_close": 0.0, "change": 0.0, "change_pct": 0.0,
